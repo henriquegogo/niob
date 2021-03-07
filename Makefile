@@ -1,8 +1,12 @@
-ALL:
-	gcc caco.c -o caco.x86_64
+BINNAME = caco
+SRC = $(wildcard *.c)
+CFLAGS = -std=gnu11
+
+all:
+	$(CC) -o $(BINNAME) $(SRC) $(CFLAGS)
 
 run:
-	./caco.x86_64
+	./$(BINNAME)
 
 clean:
-	rm caco.x86_64
+	rm $(BINNAME)

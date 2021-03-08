@@ -5,6 +5,10 @@ CFLAGS = -std=gnu11
 all:
 	$(CC) -o $(BINNAME) $(SRC) $(CFLAGS)
 
+debug:
+	$(CC) -g -o $(BINNAME) $(SRC) $(CFLAGS)
+	gdb $(BINNAME)
+
 run:
 	./$(BINNAME)
 

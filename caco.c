@@ -138,12 +138,18 @@ char *read_file(char *filename) {
     return text;
 }
 
-char *load(char *filename) {
+Token *load(char *filename) {
     char *text = read_file(filename);
     Token *tokens = lexer(text);
-    return text;
+    return tokens;
 }
 
 int main() {
-    char *text = load("script.caco");
+    Token *tokens = load("script.caco");
+    printf("%i (%s)\n", tokens[0].type, tokens[0].value);
+    printf("%i (%s)\n", tokens[1].type, tokens[1].value);
+    printf("%i (%s)\n", tokens[2].type, tokens[2].value);
+    printf("%i (%s)\n", tokens[3].type, tokens[3].value);
+    printf("%i (%s)\n", tokens[4].type, tokens[4].value);
+    printf("%i (%s)\n", tokens[5].type, tokens[5].value);
 }

@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 
 long pos = 0;
 
 typedef enum {
-    NONE, VALUE, EQUAL, VAR, FUNC, ARG
+    NONE, STRING, VALUE, EQUAL, DEF, FUNC, ARG
 } Types;
 
 typedef struct Token {
@@ -19,49 +17,34 @@ typedef struct {
     long length;
 } String;
 
-bool is_space(char ch) {
+int is_space(char ch) {
     return ch == ' ' || ch == '\t';
 }
 
-bool is_equal(char ch) {
+int is_equal(char ch) {
     return ch == '=';
 }
 
-bool is_newline(char ch) {
+int is_newline(char ch) {
     return ch == '\n' || ch == '\r';
 }
 
-bool is_variable(char ch) {
+int is_alpha(char ch) {
     return ch >= 'A' && ch <= 'Z' \
         || ch >= 'a' && ch <= 'z' \
         || ch == '_';
 }
 
-bool is_quotation(char ch) {
-    return ch == '\'' || ch == '"';
+int is_quote(char ch) {
+    return ch == '"';
 }
 
-bool is_value(char ch) {
-    return ch >= '0' && ch <= '9' \
-        || ch >= 'A' && ch <= 'Z' \
-        || ch >= 'a' && ch <= 'z' \
-        || ch == '.' \
-        || ch == ',' \
-        || ch == ';' \
-        || ch == ':' \
-        || ch == '\\' \
-        || ch == '/' \
-        || ch == '-' \
-        || ch == '_' \
-        || ch == '#' \
-        || ch == '$' \
-        || ch == ' ' \
-        || ch == '"' \
-        || ch == '\'';
+int is_singlequote(char ch) {
+    return ch == '\'';
 }
 
 Token next_token(String text) {
-    Token token;
+    long i = 0;
 
     if (is_space(text.content[pos])) {
         while (is_space(text.content[pos])) {
@@ -76,18 +59,15 @@ Token next_token(String text) {
     }
 
     if (is_equal(text.content[pos])) {
-        token.type = EQUAL;
-        token.value = "";
+        Token token = { EQUAL, NULL };
         ++pos;
 
         return token;
     }
-    else if (is_variable(text.content[pos])) {
-        token.type = VAR;
-        token.value = malloc(0);
-        long i = 0;
+    else if (is_alpha(text.content[pos])) {
+        Token token = { DEF, malloc(0) };
 
-        while (is_variable(text.content[pos])) {
+        while (is_alpha(text.content[pos])) {
             token.value = realloc(token.value, (i + 1) * sizeof(char));
             token.value[i] = text.content[pos];
             ++i;
@@ -96,12 +76,24 @@ Token next_token(String text) {
 
         return token;
     }
-    else if (is_quotation(text.content[pos])) {
-        token.type = VALUE;
-        token.value = malloc(0);
-        long i = 0;
+    else if (is_quote(text.content[pos])) {
+        Token token = { STRING, malloc(0) };
+        ++pos;
 
-        while (is_value(text.content[pos])) {
+        while (!is_quote(text.content[pos])) {
+            token.value = realloc(token.value, (i + 1) * sizeof(char));
+            token.value[i] = text.content[pos];
+            ++i;
+            ++pos;
+        }
+
+        return token;
+    }
+    else if (is_singlequote(text.content[pos])) {
+        Token token = { STRING, malloc(0) };
+        ++pos;
+
+        while (!is_singlequote(text.content[pos])) {
             token.value = realloc(token.value, (i + 1) * sizeof(char));
             token.value[i] = text.content[pos];
             ++i;
@@ -111,8 +103,7 @@ Token next_token(String text) {
         return token;
     }
 
-    token.type = NONE;
-    token.value = NULL;
+    Token token = { NONE, NULL };
 
     return token;
 }
@@ -124,8 +115,12 @@ Token* lexer(String text) {
     while (pos < text.length) {
         tokens = realloc(tokens, (i + 1) * sizeof(Token));
         Token token = next_token(text);
-        tokens[i] = token;
-        ++i;
+        
+        if (token.type != NONE) {
+            tokens[i] = token;
+            ++i;
+        }
+
         ++pos;
     }
 

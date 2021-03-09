@@ -71,8 +71,7 @@ Token next_token(char *text) {
     }
     else if (is_quote(text[pos])) {
         char quote_char = text[pos];
-        ++pos;
-        long initial_pos = pos;
+        long initial_pos = ++pos;
         while (text[pos] != quote_char) ++pos;
         long chars_size = pos - initial_pos;
 

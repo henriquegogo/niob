@@ -36,6 +36,14 @@ int is_quote(char ch) {
     return ch == '"' || ch == '\'';
 }
 
+int is_parentheses_open(char ch) {
+    return ch == '(';
+}
+
+int is_parentheses_close(char ch) {
+    return ch == ')';
+}
+
 Token next_token(char *text) {
     while (is_space(text[pos])) ++pos;
     while (is_newline(text[pos])) ++pos;
@@ -50,8 +58,13 @@ Token next_token(char *text) {
         long initial_pos = pos;
         while (is_alpha(text[pos])) ++pos;
         long chars_size = pos - initial_pos;
+        Types token_type;
 
-        Token token = { DEF, malloc(chars_size * sizeof(char)) };
+        if (is_parentheses_open(text[pos])) token_type = FUNC;
+        else if (is_parentheses_close(text[pos])) token_type = ARG;
+        else token_type = DEF;
+
+        Token token = { token_type, malloc(chars_size * sizeof(char)) };
         memcpy(token.value, &text[initial_pos], chars_size);
 
         return token;

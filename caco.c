@@ -7,18 +7,27 @@ long text_pos = 0;
 long tokens_length = 0;
 
 typedef enum {
-    NONE, STRING, VALUE, EQUAL, DEF, FUNC, ARG
-} Types;
+    NONE, STRING, VALUE, EQUAL, VAR, FUNC, ARG
+} Type;
 
 typedef struct Token {
-    Types type;
+    Type type;
     char *value;
 } Token;
 
 // PARSER
 void parser(Token *tokens) {
     for (int i = 0; i <= tokens_length; i++) {
-        printf("Parsing %i (%s)\n", tokens[i].type, tokens[i].value);
+        Type token_type = tokens[i].type;
+        char *token_value = tokens[i].value;
+
+        if (token_type == VAR) {
+        }
+        else if (token_type == FUNC) {
+            printf("printing ");
+        }
+
+        printf("> %s\n", token_value);
     }
 }
 
@@ -72,10 +81,10 @@ Token next_token(char *text) {
         while (is_alpha(text[text_pos]) || is_numeric(text[text_pos])) ++text_pos;
         long chars_size = text_pos - initial_text_pos;
 
-        Types token_type;
+        Type token_type;
         if (is_parentheses_open(text[text_pos])) token_type = FUNC;
         else if (is_parentheses_close(text[text_pos])) token_type = ARG;
-        else token_type = DEF;
+        else token_type = VAR;
 
         Token token = { token_type, malloc(chars_size * sizeof(char)) };
         memcpy(token.value, &text[initial_text_pos], chars_size);

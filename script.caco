@@ -1,2 +1,3 @@
-message = "Hello, World";
+message = "Hello, World"
+message2 = "Bye bye, World"
 print(message)

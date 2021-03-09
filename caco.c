@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-long length = 0;
-long pos = 0;
+long text_length = 0;
+long text_pos = 0;
+long tokens_length = 0;
 
 typedef enum {
     NONE, STRING, VALUE, EQUAL, DEF, FUNC, ARG
@@ -14,6 +15,14 @@ typedef struct Token {
     char *value;
 } Token;
 
+// PARSER
+void parser(Token *tokens) {
+    for (int i = 0; i <= tokens_length; i++) {
+        printf("Parsing %i (%s)\n", tokens[i].type, tokens[i].value);
+    }
+}
+
+// LEXER
 int is_space(char ch) {
     return ch == ' ' || ch == '\t';
 }
@@ -32,6 +41,10 @@ int is_alpha(char ch) {
         || ch == '_';
 }
 
+int is_numeric(char ch) {
+    return ch >= '0' && ch <= '9';
+}
+
 int is_quote(char ch) {
     return ch == '"' || ch == '\'';
 }
@@ -45,38 +58,38 @@ int is_parentheses_close(char ch) {
 }
 
 Token next_token(char *text) {
-    while (is_space(text[pos])) ++pos;
-    while (is_newline(text[pos])) ++pos;
+    while (is_space(text[text_pos])) ++text_pos;
+    while (is_newline(text[text_pos])) ++text_pos;
 
-    if (is_equal(text[pos])) {
-        ++pos;
+    if (is_equal(text[text_pos])) {
+        ++text_pos;
         Token token = { EQUAL, NULL };
 
         return token;
     }
-    else if (is_alpha(text[pos])) {
-        long initial_pos = pos;
-        while (is_alpha(text[pos])) ++pos;
-        long chars_size = pos - initial_pos;
-        Types token_type;
+    else if (is_alpha(text[text_pos])) {
+        long initial_text_pos = text_pos;
+        while (is_alpha(text[text_pos]) || is_numeric(text[text_pos])) ++text_pos;
+        long chars_size = text_pos - initial_text_pos;
 
-        if (is_parentheses_open(text[pos])) token_type = FUNC;
-        else if (is_parentheses_close(text[pos])) token_type = ARG;
+        Types token_type;
+        if (is_parentheses_open(text[text_pos])) token_type = FUNC;
+        else if (is_parentheses_close(text[text_pos])) token_type = ARG;
         else token_type = DEF;
 
         Token token = { token_type, malloc(chars_size * sizeof(char)) };
-        memcpy(token.value, &text[initial_pos], chars_size);
+        memcpy(token.value, &text[initial_text_pos], chars_size);
 
         return token;
     }
-    else if (is_quote(text[pos])) {
-        char quote_char = text[pos];
-        long initial_pos = ++pos;
-        while (text[pos] != quote_char) ++pos;
-        long chars_size = pos - initial_pos;
+    else if (is_quote(text[text_pos])) {
+        char quote_char = text[text_pos];
+        long initial_text_pos = ++text_pos;
+        while (text[text_pos] != quote_char) ++text_pos;
+        long chars_size = text_pos - initial_text_pos;
 
         Token token = { STRING, malloc(chars_size * sizeof(char)) };
-        memcpy(token.value, &text[initial_pos], chars_size);
+        memcpy(token.value, &text[initial_text_pos], chars_size);
 
         return token;
     }
@@ -86,21 +99,23 @@ Token next_token(char *text) {
     return token;
 }
 
-Token* lexer(char *text) {
+Token *lexer(char *text) {
     Token *tokens;
-    long i = 0;
-
-    while (pos < length) {
-        tokens = realloc(tokens, (i + 1) * sizeof(Token));
+    long token_index = 0;
+    
+    while (text_pos < text_length) {
+        tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
         Token token = next_token(text);
         
         if (token.type != NONE) {
-            tokens[i] = token;
-            ++i;
+            tokens[token_index] = token;
+            ++token_index;
         }
 
-        ++pos;
+        ++text_pos;
     }
+
+    tokens_length = token_index;
 
     return tokens;
 }
@@ -110,11 +125,11 @@ char *read_file(char *filename) {
     char *text;
 
     fseek(file, 0, SEEK_END);
-    length = ftell(file);
+    text_length = ftell(file);
     rewind(file);
 
-    text = malloc(length * sizeof(char));
-    fread(text, length, 1, file);
+    text = malloc(text_length * sizeof(char));
+    fread(text, text_length, 1, file);
     fclose(file);
 
     return text;
@@ -123,15 +138,16 @@ char *read_file(char *filename) {
 Token *load(char *filename) {
     char *text = read_file(filename);
     Token *tokens = lexer(text);
+    free(text);
+
+    parser(tokens);
+
     return tokens;
 }
 
 int main() {
     Token *tokens = load("script.caco");
-    printf("%i (%s)\n", tokens[0].type, tokens[0].value);
-    printf("%i (%s)\n", tokens[1].type, tokens[1].value);
-    printf("%i (%s)\n", tokens[2].type, tokens[2].value);
-    printf("%i (%s)\n", tokens[3].type, tokens[3].value);
-    printf("%i (%s)\n", tokens[4].type, tokens[4].value);
-    printf("%i (%s)\n", tokens[5].type, tokens[5].value);
+    free(tokens);
+
+    return 0;
 }

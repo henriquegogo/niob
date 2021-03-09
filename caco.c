@@ -140,13 +140,12 @@ Token *load(char *filename) {
     Token *tokens = lexer(text);
     free(text);
 
-    parser(tokens);
-
     return tokens;
 }
 
 int main() {
     Token *tokens = load("script.caco");
+    parser(tokens);
     free(tokens);
 
     return 0;

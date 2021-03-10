@@ -88,6 +88,7 @@ Token next_token(char *text) {
 
         Token token = { token_type, malloc(chars_size * sizeof(char)) };
         memcpy(token.value, &text[initial_text_pos], chars_size);
+        token.value[chars_size] = '\0';
 
         return token;
     }
@@ -99,6 +100,7 @@ Token next_token(char *text) {
 
         Token token = { STRING, malloc(chars_size * sizeof(char)) };
         memcpy(token.value, &text[initial_text_pos], chars_size);
+        token.value[chars_size] = '\0';
 
         return token;
     }

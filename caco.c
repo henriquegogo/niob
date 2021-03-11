@@ -10,7 +10,7 @@ typedef enum {
     NONE, STRING, VALUE, EQUAL, VAR, FUNC, ARG
 } Type;
 
-typedef struct Token {
+typedef struct {
     Type type;
     char *value;
 } Token;

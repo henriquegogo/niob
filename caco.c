@@ -15,20 +15,47 @@ typedef struct {
     char *value;
 } Token;
 
+typedef struct {
+    char *key;
+    char *value;
+} KeyValue;
+
 // PARSER
 void parser(Token *tokens) {
+    long stack_length = 0;
+    KeyValue *stack = malloc(stack_length);
+
     for (int i = 0; i <= tokens_length; i++) {
-        Type token_type = tokens[i].type;
-        char *token_value = tokens[i].value;
+        printf("> %u %s\n", tokens[i].type, tokens[i].value);
 
-        if (token_type == VAR) {
+        if (tokens[i].type == VAR && tokens[i+1].type == EQUAL && tokens[i+2].type == STRING) {
+            char *key = tokens[i].value;
+            i = i + 2;
+            char *value = tokens[i].value;
+            ++stack_length;
+
+            KeyValue key_value = { key, value };
+            stack = realloc(stack, stack_length * sizeof(KeyValue)); 
+            stack[stack_length - 1] = key_value;
+
+            printf("SET %s = '%s'\n", key, value);
         }
-        else if (token_type == FUNC) {
-            printf("printing ");
+        else if (tokens[i].type == VAR) {
+            for (int si = 0; si <= stack_length; si++) {
+                if (!strcmp(stack[si].key, tokens[i].value)) {
+                    printf("GET %s == '%s'\n", stack[si].key, stack[si].value);
+                    break;
+                }
+            }
+        }
+        else if (tokens[i].type == FUNC) {
+            printf("CALL FUNC %s\n", tokens[i].value);
         }
 
-        printf("> %s\n", token_value);
+        printf("\n");
     }
+
+    free(stack);
 }
 
 // LEXER
@@ -83,7 +110,7 @@ Token next_token(char *text) {
 
         Type token_type;
         if (is_parentheses_open(text[text_pos])) token_type = FUNC;
-        else if (is_parentheses_close(text[text_pos])) token_type = ARG;
+        //else if (is_parentheses_close(text[text_pos])) token_type = ARG;
         else token_type = VAR;
 
         Token token = { token_type, malloc(chars_size * sizeof(char)) };

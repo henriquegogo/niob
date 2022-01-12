@@ -2,4 +2,3 @@ set message "Hello, World"
 
 set length 12
 print message
-

@@ -40,7 +40,7 @@ int is_space(char ch) {
 }
 
 int is_newline(char ch) {
-    return ch == '\n' || ch == '\r';
+    return ch == '\n' || ch == '\r' || ch == ';';
 }
 
 int is_alpha(char ch) {
@@ -77,31 +77,31 @@ Token *lexer(char *text) {
     
     while (text_pos < text_length) {
         tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
+        long initial_text_pos = text_pos;
 
-        while (is_space(text[text_pos])) ++text_pos;
+        while (is_space(text[text_pos])) text_pos++;
 
-        if (is_newline(text[text_pos])) {
-            tokens[token_index++] = (Token){ EOL, NULL };
-            while (is_newline(text[text_pos + 1])) ++text_pos;
-        }
-        else if (is_alpha(text[text_pos])) {
-            long initial_text_pos = text_pos;
-            while (is_alpha(text[text_pos]) || is_numeric(text[text_pos])) ++text_pos;
+        if (is_alpha(text[text_pos])) {
+            while (is_alpha(text[text_pos]) || is_numeric(text[text_pos])) text_pos++;
             tokens[token_index++] = new_token(SYMBOL, text, initial_text_pos);
         }
         else if (is_numeric(text[text_pos])) {
-            long initial_text_pos = text_pos;
-            while (is_numeric(text[text_pos]) || is_dot(text[text_pos])) ++text_pos;
+            while (is_numeric(text[text_pos]) || is_dot(text[text_pos])) text_pos++;
             tokens[token_index++] = new_token(NUMBER, text, initial_text_pos);
         }
         else if (is_quote(text[text_pos])) {
-            char quote_char = text[text_pos];
-            long initial_text_pos = ++text_pos;
-            while (text[text_pos] != quote_char) ++text_pos;
-            tokens[token_index++] = new_token(STRING, text, initial_text_pos);
+            char quote_char = text[text_pos++];
+            while (text[text_pos] != quote_char) text_pos++;
+            tokens[token_index++] = new_token(STRING, text, initial_text_pos + 1);
         }
 
-        ++text_pos;
+        if (is_newline(text[text_pos])) {
+            tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
+            while (is_newline(text[text_pos + 1])) text_pos++;
+            tokens[token_index++] = (Token){ EOL, NULL };
+        }
+
+        text_pos++;
     }
 
     tokens_length = token_index;

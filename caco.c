@@ -5,9 +5,10 @@
 long text_length = 0;
 long text_pos = 0;
 long tokens_length = 0;
+char types[4][16] = {"SYMBOL", "NUMBER", "STRING", "EOL"};
 
 typedef enum {
-    SYMBOL, NUMBER, STRING
+    SYMBOL, NUMBER, STRING, EOL
 } Type;
 
 typedef struct {
@@ -18,7 +19,6 @@ typedef struct {
 // INTERPRETER
 void interpreter(Token *tokens) {
     for (int i = 0; i < tokens_length; i++) {
-        char types[3][16] = {"SYMBOL", "NUMBER", "STRING"};
         printf("> %s %s\n", types[tokens[i].type], tokens[i].value);
 
         switch (tokens[i].type) {
@@ -72,16 +72,19 @@ Token new_token(int token_type, char *text, int initial_text_pos) {
 }
 
 Token *lexer(char *text) {
-    Token *tokens;
+    Token *tokens = malloc(0);
     long token_index = 0;
     
     while (text_pos < text_length) {
         tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
 
         while (is_space(text[text_pos])) ++text_pos;
-        while (is_newline(text[text_pos])) ++text_pos;
 
-        if (is_alpha(text[text_pos])) {
+        if (is_newline(text[text_pos])) {
+            tokens[token_index++] = (Token){ EOL, NULL };
+            while (is_newline(text[text_pos + 1])) ++text_pos;
+        }
+        else if (is_alpha(text[text_pos])) {
             long initial_text_pos = text_pos;
             while (is_alpha(text[text_pos]) || is_numeric(text[text_pos])) ++text_pos;
             tokens[token_index++] = new_token(SYMBOL, text, initial_text_pos);

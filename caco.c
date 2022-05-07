@@ -16,8 +16,11 @@ typedef struct {
     char *value;
 } Token;
 
-// INTERPRETER
-void interpreter(Token *tokens) {
+typedef struct {
+} AST;
+
+// PARSER
+AST *parser(Token *tokens) {
     for (int i = 0; i < tokens_length; i++) {
         printf("> %s %s\n", types[tokens[i].type], tokens[i].value);
 
@@ -32,6 +35,8 @@ void interpreter(Token *tokens) {
                 break;
         }
     }
+    
+    return &((AST) {});
 }
 
 // LEXER
@@ -124,7 +129,7 @@ int main() {
     char *text = read_file("script.caco");
     Token *tokens = lexer(text);
     free(text);
-    interpreter(tokens);
+    AST *ast = parser(tokens);
     free(tokens);
 
     return 0;

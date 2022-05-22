@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *text;
 long text_length = 0;
 long text_pos = 0;
 long tokens_length = 0;
-char types[3][16] = {"STRING", "TEXT", "EOL"};
 
 typedef enum {
     STRING, TEXT, EOL
@@ -13,7 +13,8 @@ typedef enum {
 
 typedef struct {
     Type type;
-    char *value;
+    long pos;
+    long length;
 } Token;
 
 typedef struct {
@@ -24,7 +25,11 @@ typedef struct {
 // PARSER
 AST *parser(Token *tokens) {
     for (int i = 0; i < tokens_length; i++) {
-        printf("> %s %s\n", types[tokens[i].type], tokens[i].value);
+        char *value = &text[tokens[i].pos];
+        value[tokens[i].length] = '\0';
+
+        char types[3][16] = {"STRING", "TEXT", "EOL"};
+        printf("> %s %s\n", types[tokens[i].type], value);
 
         switch (tokens[i].type) {
             case STRING:
@@ -52,17 +57,7 @@ int is_quote(char ch) {
     return ch == '"' || ch == '\'';
 }
 
-Token new_token(int token_type, char *text, int initial_pos) {
-    long chars_size = text_pos - initial_pos;
-
-    Token token = { token_type, malloc(chars_size * sizeof(char)) };
-    memcpy(token.value, &text[initial_pos], chars_size);
-    token.value[chars_size] = '\0';
-
-    return token;
-}
-
-Token *lexer(char *text) {
+Token *lexer() {
     Token *tokens = malloc(0);
     long token_index = 0;
     
@@ -74,11 +69,11 @@ Token *lexer(char *text) {
         if (is_quote(text[text_pos])) {
             char quote_char = text[text_pos++];
             while (text[text_pos] != quote_char) text_pos++;
-            tokens[token_index++] = new_token(TEXT, text, initial_pos + 1);
+            tokens[token_index++] = (Token){ TEXT, initial_pos, text_pos - initial_pos + 1 };
         }
         else {
             while (is_char(text[text_pos])) text_pos++;
-            tokens[token_index++] = new_token(STRING, text, initial_pos);
+            tokens[token_index++] = (Token){ STRING, initial_pos, text_pos - initial_pos };
         }
 
         if (is_eol(text[text_pos]) || is_eol(text[text_pos + 1])) {
@@ -94,9 +89,8 @@ Token *lexer(char *text) {
     return tokens;
 }
 
-char *read_file(char *filename) {
+void read_file(char *filename) {
     FILE *file = fopen(filename, "r");
-    char *text;
 
     fseek(file, 0, SEEK_END);
     text_length = ftell(file);
@@ -105,16 +99,14 @@ char *read_file(char *filename) {
     text = malloc(text_length * sizeof(char));
     fread(text, text_length, 1, file);
     fclose(file);
-
-    return text;
 }
 
 int main() {
-    char *text = read_file("script.caco");
-    Token *tokens = lexer(text);
-    free(text);
+    read_file("script.caco");
+    Token *tokens = lexer();
     AST *ast = parser(tokens);
     free(tokens);
+    free(text);
 
     return 0;
 }

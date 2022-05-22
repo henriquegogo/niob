@@ -1,4 +1,11 @@
 set message "Hello, World"
+set message2 Hello
 
 set length 12
 print message
+
+
+
+
+set name Henrique
+print name

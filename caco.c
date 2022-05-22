@@ -5,10 +5,10 @@
 long text_length = 0;
 long text_pos = 0;
 long tokens_length = 0;
-char types[4][16] = {"IDENTIFIER", "NUMBER", "STRING", "EOL"};
+char types[3][16] = {"STRING", "TEXT", "EOL"};
 
 typedef enum {
-    IDENTIFIER, NUMBER, STRING, EOL
+    STRING, TEXT, EOL
 } Type;
 
 typedef struct {
@@ -17,6 +17,8 @@ typedef struct {
 } Token;
 
 typedef struct {
+    Token token;
+    struct AST *children;
 } AST;
 
 // PARSER
@@ -25,11 +27,9 @@ AST *parser(Token *tokens) {
         printf("> %s %s\n", types[tokens[i].type], tokens[i].value);
 
         switch (tokens[i].type) {
-            case IDENTIFIER:
-                break;
-            case NUMBER:
-                break;
             case STRING:
+                break;
+            case TEXT:
                 break;
             default:
                 break;
@@ -40,22 +40,12 @@ AST *parser(Token *tokens) {
 }
 
 // LEXER
-int is_space(char ch) {
-    return ch == ' ' || ch == '\t';
-}
-
 int is_eol(char ch) {
-    return ch == '\n' || ch == '\r' || ch == ';';
+    return ch == '\n' || ch == '\r';
 }
 
-int is_alpha(char ch) {
-    return ch >= 'A' && ch <= 'Z' \
-        || ch >= 'a' && ch <= 'z' \
-        || ch == '_';
-}
-
-int is_number(char ch) {
-    return ch >= '0' && ch <= '9';
+int is_char(char ch) {
+    return ch != '\t' && ch != ' ' && !is_eol(ch);
 }
 
 int is_quote(char ch) {
@@ -78,27 +68,21 @@ Token *lexer(char *text) {
     
     while (text_pos < text_length) {
         tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
+        while (!is_char(text[text_pos])) text_pos++;
         long initial_pos = text_pos;
 
-        while (is_space(text[text_pos])) text_pos++;
-
-        if (is_alpha(text[text_pos])) {
-            while (is_alpha(text[text_pos]) || is_number(text[text_pos])) text_pos++;
-            tokens[token_index++] = new_token(IDENTIFIER, text, initial_pos);
-        }
-        else if (is_number(text[text_pos])) {
-            while (is_number(text[text_pos])) text_pos++;
-            tokens[token_index++] = new_token(NUMBER, text, initial_pos);
-        }
-        else if (is_quote(text[text_pos])) {
+        if (is_quote(text[text_pos])) {
             char quote_char = text[text_pos++];
             while (text[text_pos] != quote_char) text_pos++;
-            tokens[token_index++] = new_token(STRING, text, initial_pos + 1);
+            tokens[token_index++] = new_token(TEXT, text, initial_pos + 1);
+        }
+        else {
+            while (is_char(text[text_pos])) text_pos++;
+            tokens[token_index++] = new_token(STRING, text, initial_pos);
         }
 
-        if (is_eol(text[text_pos])) {
+        if (is_eol(text[text_pos]) || is_eol(text[text_pos + 1])) {
             tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
-            while (is_eol(text[text_pos + 1])) text_pos++;
             tokens[token_index++] = (Token){ EOL };
         }
 

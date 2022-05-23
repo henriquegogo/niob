@@ -1,6 +1,4 @@
-STRING = 'STRING'
-TEXT = 'TEXT'
-EOL = 'EOL'
+STRING, TEXT, EOL = 'STRING', 'TEXT', 'EOL'
 text: str = ''
 
 class Token():
@@ -9,22 +7,24 @@ class Token():
         self.pos = pos
         self.length = length
 
+# PARSER
 def parser(tokens):
     for token in tokens:
         value = text[token.pos : token.pos + token.length]
         print("> ", token.type, value)
 
-def is_eol(ch: str):
+# LEXER
+def is_eol(ch: str) -> bool:
     return ch == '\n' or ch == '\r'
 
-def is_char(ch: str):
+def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
 
-def is_quote(ch: str):
+def is_quote(ch: str) -> bool:
     return ch == '"' or ch == '\''
 
-def lexer():
-    tokens: list = []
+def lexer() -> list[Token]:
+    tokens: list[Token] = []
     text_pos: int = 0
 
     while text_pos < len(text):

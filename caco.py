@@ -1,9 +1,12 @@
 IDENTIFIER, STRING, NUMBER, EOL = 'IDENTIFIER', 'STRING', 'NUMBER', 'EOL'
 
+def _set(key, value):
+    env['vars'][key] = value
+
 env = {
     'vars': {},
     'cmds': {
-        'set': lambda key, value: env['vars'].setdefault(key, value),
+        'set': _set,
         'print': print
     }
 }

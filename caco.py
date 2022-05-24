@@ -19,7 +19,7 @@ class Token():
         self.length = length
 
 # PARSER
-def parser(tokens: list[Token], text: str):
+def parser(tokens: list, text: str):
     env = Environment()
     env.func('print', print)
 
@@ -54,8 +54,8 @@ def is_char(ch: str) -> bool:
 def is_quote(ch: str) -> bool:
     return ch == '"' or ch == '\''
 
-def lexer(text: str) -> list[Token]:
-    tokens: list[Token] = []
+def lexer(text: str) -> list:
+    tokens: list = []
     pos: int = 0
 
     while pos + 1 < len(text):

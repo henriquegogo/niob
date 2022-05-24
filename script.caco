@@ -1,11 +1,7 @@
-set message "Hello, World"
-set message2 Hello
-
-set length 12
+set message "Hello, world"
 print message
 
+set age 18
 
-
-
-set name Henrique
-print name
+print age
+print "Bye bye, world"

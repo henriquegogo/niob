@@ -1,7 +1,10 @@
 set message "Hello, world"
-print message
+set text message
+set message "Edited"
+print text
 
 set age 18
 
 print age
+print message
 print "Bye bye, world"

@@ -1,17 +1,10 @@
-IDENTIFIER, STRING, EOL = 'IDENTIFIER', 'STRING', 'EOL'
-
-def _set(name, value):
-    env['vars'][name] = value;
-
-def _print(arg):
-    value = arg if is_quote(arg[0]) else env['vars'][arg]
-    print(value)
+IDENTIFIER, STRING, NUMBER, EOL = 'IDENTIFIER', 'STRING', 'NUMBER', 'EOL'
 
 env = {
     'vars': {},
     'cmds': {
-        'set': _set,
-        'print': _print
+        'set': lambda key, value: env['vars'].setdefault(key, value),
+        'print': print
     }
 }
 
@@ -34,12 +27,19 @@ def parser(tokens: list[Token], text: str):
             cmd, args = '', []
         elif token.type == IDENTIFIER and not cmd:
             cmd = value
+        elif cmd == 'set' and not len(args):
+            args.append(value)
+        elif token.type == IDENTIFIER:
+            args.append(env['vars'][value])
         else:
             args.append(value)
 
 # LEXER
 def is_eol(ch: str) -> bool:
     return ch == '\n' or ch == '\r'
+
+def is_number(ch: str) -> bool:
+    return ch >= '0' and ch <= '9'
 
 def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
@@ -59,7 +59,10 @@ def lexer(text: str) -> list[Token]:
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            tokens.append(Token(STRING, init_pos, pos - init_pos + 1))
+            tokens.append(Token(STRING, init_pos + 1, pos - init_pos - 1))
+        elif is_number(text[pos]):
+            while is_number(text[pos]): pos += 1
+            tokens.append(Token(NUMBER, init_pos, pos - init_pos))
         else:
             while is_char(text[pos]): pos += 1
             tokens.append(Token(IDENTIFIER, init_pos, pos - init_pos))

@@ -1,15 +1,16 @@
 IDENTIFIER, STRING, NUMBER, EOL = 'IDENTIFIER', 'STRING', 'NUMBER', 'EOL'
 
-def _set(key, value):
-    env['vars'][key] = value
+class Vars(): pass
 
-env = {
-    'vars': {},
-    'cmds': {
-        'set': _set,
-        'print': print
-    }
-}
+class Cmds():
+    def __init__(self, vars):
+        self.vars = vars
+
+    def set(self, key, value):
+        setattr(self.vars, key, value)
+
+    def print(self, value):
+        print(value)
 
 class Token():
     def __init__(self, type: str, pos: int = 0, length: int = 0):
@@ -19,6 +20,8 @@ class Token():
 
 # PARSER
 def parser(tokens: list[Token], text: str):
+    vars = Vars()
+    cmds = Cmds(vars)
     cmd, args = '', []
 
     for token in tokens:
@@ -26,14 +29,14 @@ def parser(tokens: list[Token], text: str):
         print("> ", token.type, value)
 
         if token.type == EOL:
-            env['cmds'][cmd](*args)
+            getattr(cmds, cmd)(*args)
             cmd, args = '', []
         elif token.type == IDENTIFIER and not cmd:
             cmd = value
         elif cmd == 'set' and not len(args):
             args.append(value)
         elif token.type == IDENTIFIER:
-            args.append(env['vars'][value])
+            args.append(getattr(vars, value))
         else:
             args.append(value)
 

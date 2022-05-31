@@ -2,13 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *text;
 long text_length = 0;
-long text_pos = 0;
+long pos = 0;
 long tokens_length = 0;
 
 typedef enum {
-    STRING, TEXT, EOL
+    IDENTIFIER, STRING, NUMBER, EOL
 } Type;
 
 typedef struct {
@@ -17,36 +16,37 @@ typedef struct {
     long length;
 } Token;
 
-typedef struct {
-    Token token;
-    struct AST *children;
-} AST;
-
 // PARSER
-AST *parser(Token *tokens) {
+void parser(Token *tokens, char *text) {
+    char *cmd = "";
+
     for (int i = 0; i < tokens_length; i++) {
         char *value = &text[tokens[i].pos];
         value[tokens[i].length] = '\0';
 
-        char types[3][16] = {"STRING", "TEXT", "EOL"};
+        char types[4][16] = {"IDENTIFIER", "STRING", "NUMBER", "EOL"};
         printf("> %s %s\n", types[tokens[i].type], value);
 
-        switch (tokens[i].type) {
-            case STRING:
-                break;
-            case TEXT:
-                break;
-            default:
-                break;
+        if (tokens[i].type == EOL) {
+        }
+        else if (tokens[i].type == IDENTIFIER && !cmd) {
+        }
+        else if (strcmp(cmd, "set")) {
+        }
+        else if (tokens[i].type == IDENTIFIER) {
+        }
+        else {
         }
     }
-    
-    return &((AST) {});
 }
 
 // LEXER
 int is_eol(char ch) {
     return ch == '\n' || ch == '\r';
+}
+
+int is_number(char ch) {
+    return ch >= '0' && ch <= '9';
 }
 
 int is_char(char ch) {
@@ -57,31 +57,36 @@ int is_quote(char ch) {
     return ch == '"' || ch == '\'';
 }
 
-Token *lexer() {
+Token *lexer(char *text) {
     Token *tokens = malloc(0);
     long token_index = 0;
     
-    while (text_pos < text_length) {
+    while (pos + 1 < text_length) {
         tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
-        while (!is_char(text[text_pos])) text_pos++;
-        long initial_pos = text_pos;
+        while (!is_char(text[pos])) pos += 1;
+        long init_pos = pos;
 
-        if (is_quote(text[text_pos])) {
-            char quote_char = text[text_pos++];
-            while (text[text_pos] != quote_char) text_pos++;
-            tokens[token_index++] = (Token){ TEXT, initial_pos, text_pos - initial_pos + 1 };
+        if (is_quote(text[pos])) {
+            char quote_char = text[pos];
+            pos += 1;
+            while (text[pos] != quote_char) pos += 1;
+            tokens[token_index++] = (Token){ STRING, init_pos + 1, pos - init_pos - 1 };
+        }
+        else if (is_number(text[pos])) {
+            while (is_number(text[pos])) pos += 1;
+            tokens[token_index++] = (Token){ NUMBER, init_pos, pos - init_pos };
         }
         else {
-            while (is_char(text[text_pos])) text_pos++;
-            tokens[token_index++] = (Token){ STRING, initial_pos, text_pos - initial_pos };
+            while (is_char(text[pos])) pos += 1;
+            tokens[token_index++] = (Token){ IDENTIFIER, init_pos, pos - init_pos };
         }
 
-        if (is_eol(text[text_pos]) || is_eol(text[text_pos + 1])) {
+        if (is_eol(text[pos]) || is_eol(text[pos + 1])) {
             tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
             tokens[token_index++] = (Token){ EOL };
         }
 
-        text_pos++;
+        pos += 1;
     }
 
     tokens_length = token_index;
@@ -89,22 +94,25 @@ Token *lexer() {
     return tokens;
 }
 
-void read_file(char *filename) {
+char *read_file(char *filename) {
     FILE *file = fopen(filename, "r");
 
     fseek(file, 0, SEEK_END);
     text_length = ftell(file);
     rewind(file);
 
-    text = malloc(text_length * sizeof(char));
+    char *text = malloc(text_length * sizeof(char));
     fread(text, text_length, 1, file);
     fclose(file);
+    
+    return text;
 }
 
 int main() {
-    read_file("script.caco");
-    Token *tokens = lexer();
-    AST *ast = parser(tokens);
+    char *text = read_file("script.caco");
+    Token *tokens = lexer(text);
+    parser(tokens, text);
+
     free(tokens);
     free(text);
 

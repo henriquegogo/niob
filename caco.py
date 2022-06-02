@@ -1,4 +1,4 @@
-IDENTIFIER, STRING, NUMBER, EOL = 'IDENTIFIER', 'STRING', 'NUMBER', 'EOL'
+IDENTIFIER, STRING, VARIABLE, EOL = 'IDENTIFIER', 'STRING', 'VARIABLE', 'EOL'
 
 class Environment():
     class Variables(): pass
@@ -21,7 +21,7 @@ class Token():
 # PARSER
 def parser(tokens: list, text: str):
     env = Environment()
-    env.func('print', print)
+    env.func('puts', print)
 
     cmd, args = '', []
 
@@ -32,11 +32,9 @@ def parser(tokens: list, text: str):
         if token.type == EOL:
             getattr(env, cmd)(*args)
             cmd, args = '', []
-        elif token.type == IDENTIFIER and not cmd:
+        elif token.type == IDENTIFIER and hasattr(env, value) and not cmd:
             cmd = value
-        elif cmd == 'set' and not len(args):
-            args.append(value)
-        elif token.type == IDENTIFIER:
+        elif token.type == VARIABLE:
             args.append(getattr(env.vars, value))
         else:
             args.append(value)
@@ -45,14 +43,14 @@ def parser(tokens: list, text: str):
 def is_eol(ch: str) -> bool:
     return ch == '\n' or ch == '\r'
 
-def is_number(ch: str) -> bool:
-    return ch >= '0' and ch <= '9'
-
 def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
 
 def is_quote(ch: str) -> bool:
     return ch == '"' or ch == '\''
+
+def is_var_prefix(ch: str) -> bool:
+    return ch == '$'
 
 def lexer(text: str) -> list:
     tokens: list = []
@@ -67,9 +65,9 @@ def lexer(text: str) -> list:
             pos += 1
             while text[pos] != quote_char: pos += 1
             tokens.append(Token(STRING, init_pos + 1, pos - init_pos - 1))
-        elif is_number(text[pos]):
-            while is_number(text[pos]): pos += 1
-            tokens.append(Token(NUMBER, init_pos, pos - init_pos))
+        elif is_var_prefix(text[pos]):
+            while is_char(text[pos]): pos += 1
+            tokens.append(Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
         else:
             while is_char(text[pos]): pos += 1
             tokens.append(Token(IDENTIFIER, init_pos, pos - init_pos))

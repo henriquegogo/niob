@@ -7,6 +7,11 @@ puts $text
 
 set age 18
 
+set total sum 25 26
+puts "Total:" $total
+
+puts sum 2 3
+
 puts $age
 puts $message
 puts "Bye bye, world"

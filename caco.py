@@ -26,27 +26,28 @@ def parser(tokens: list, text: str):
     env = Environment()
     env.func('puts', print)
 
-    cmd, cmd_args = '', []
-    nested_cmd, args = '', []
+    cmds, cmds_args, args = [], [], []
 
     for token in tokens:
         value = text[token.pos : token.pos + token.length]
         print("> ", token.type, value)
 
         if token.type == EOL:
-            if nested_cmd:
-                cmd_return = getattr(env, nested_cmd)(*args)
-                cmd_args.append(cmd_return)
-                args = cmd_args
-            getattr(env, cmd)(*args)
-            cmd, cmd_args = '', []
-            nested_cmd, args = '', []
-        elif token.type == IDENTIFIER and hasattr(env, value) and not cmd:
-            cmd = value
-        elif token.type == IDENTIFIER and hasattr(env, value) and cmd:
-            cmd_args = args.copy()
-            args = []
-            nested_cmd = value
+            cmds_args.insert(0, args.copy())
+            cmd_return = None
+
+            for i, cmd in enumerate(cmds):
+                if cmd_return:
+                    cmds_args[i].append(cmd_return)
+                    cmd_return = None
+                cmd_return = getattr(env, cmd)(*cmds_args[i])
+
+            cmds, cmds_args, args = [], [], []
+        elif token.type == IDENTIFIER and hasattr(env, value):
+            if len(cmds) > 0:
+                cmds_args.insert(0, args.copy())
+                args = []
+            cmds.insert(0, value)
         elif token.type == VARIABLE:
             args.append(getattr(env.vars, value))
         else:

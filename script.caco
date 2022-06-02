@@ -10,7 +10,7 @@ set age 18
 set total sum 25 26
 puts "Total:" $total
 
-puts sum 2 3
+puts 'Sum of sum:' sum 2 sum 3 4
 
 puts $age
 puts $message

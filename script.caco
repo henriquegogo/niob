@@ -1,14 +1,13 @@
-set message "Hello, world"
-puts $message
+# CACO is a language for scripting based on TCL and others like Ruby and Lua
 
-set text $message
+set message 'Hello, world'      # The standard way to call functions and set var
+set text $message               # Get variable value using $ prefix
+message = "What's up?"          # Arguments and functions order doesn't matter
+
 puts $message; puts $text
 
-message = "Edited"
-puts $message
+delete text
+puts $text
 
-total = sum 25 26
+total = sum 25 26               # Nested functions - TBI
 puts "Total:" $total
-
-puts 'Sum of sum:' sum 2 sum 3 4
-puts "Bye bye, world"

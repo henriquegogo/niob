@@ -1,4 +1,5 @@
-IDENTIFIER, STRING, VARIABLE, EOL = 'IDENTIFIER', 'STRING', 'VARIABLE', 'EOL'
+IDENTIFIER, STRING, VARIABLE, COMMENT, EOL = \
+'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EOL'
 
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
@@ -28,6 +29,12 @@ def get_node(node, key: str):
         if node.key == key:
             return node.value
 
+def del_node(node, key: str):
+    while node != None:
+        if node.next.key == key:
+            node.next = node.next.next
+        node = node.next
+
 def add_node(node, last):
     while node.next != None:
         node = node.next
@@ -40,6 +47,7 @@ def parser(token: Token, text: str):
 
     set_node(func, 'puts', print)
     set_node(func, 'set', lambda key, value: set_node(vars, key, value))
+    set_node(func, 'delete', lambda key: del_node(vars, key))
     set_node(func, 'sum', lambda a, b: float(a) + float(b))
     set_node(func, '=', get_node(func, 'set'))
     set_node(func, '+', get_node(func, 'sum'))
@@ -69,6 +77,7 @@ def parser(token: Token, text: str):
             cmds.insert(0, value)
         elif token.type == VARIABLE:
             args.append(get_node(vars, value))
+        elif token.type == COMMENT: pass
         else:
             args.append(value)
 
@@ -95,6 +104,9 @@ def lexer(text: str) -> Token:
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
             add_node(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
+        elif text[pos] == '#':
+            while not is_eol(text[pos]): pos += 1
+            add_node(tokens, Token(COMMENT, init_pos + 1, pos - init_pos - 1))
         else:
             while is_char(text[pos]): pos += 1
             add_node(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))

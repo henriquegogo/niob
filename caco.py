@@ -16,19 +16,26 @@ class Environment():
         return float(a) + float(b)
 
 class Token():
-    def __init__(self, type: str, pos: int = 0, length: int = 0):
+    def __init__(self, type: str = '', pos: int = 0, length: int = 0):
         self.type = type
         self.pos = pos
         self.length = length
+        self.next = None
+
+    def add_last(self, last):
+        current: Token = self
+        while current.next != None: current = current.next
+        setattr(current, 'next', last)
 
 # PARSER
-def parser(tokens: list, text: str):
+def parser(token: Token, text: str):
     env = Environment()
     env.func('puts', print)
 
     cmds, cmds_args, args = [], [], []
 
-    for token in tokens:
+    while token.next:
+        token = token.next
         value = text[token.pos : token.pos + token.length]
         print("> ", token.type, value)
 
@@ -60,9 +67,9 @@ def is_eol(ch: str) -> bool:
 def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
 
-def lexer(text: str) -> list:
-    tokens: list = []
+def lexer(text: str) -> Token:
     pos: int = 0
+    head_token: Token = Token()
 
     while pos + 1 < len(text):
         while not is_char(text[pos]): pos += 1
@@ -72,20 +79,20 @@ def lexer(text: str) -> list:
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            tokens.append(Token(STRING, init_pos + 1, pos - init_pos - 1))
+            head_token.add_last(Token(STRING, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
-            tokens.append(Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
+            head_token.add_last(Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
         else:
             while is_char(text[pos]): pos += 1
-            tokens.append(Token(IDENTIFIER, init_pos, pos - init_pos))
+            head_token.add_last(Token(IDENTIFIER, init_pos, pos - init_pos))
 
         if is_eol(text[pos]) or is_eol(text[pos + 1]):
-            tokens.append(Token(EOL))
+            head_token.add_last(Token(EOL))
 
         pos += 1
 
-    return tokens
+    return head_token
 
 def read_file(filename: str):
     file = open(filename, 'r')
@@ -94,8 +101,8 @@ def read_file(filename: str):
 
 def main():
     text = read_file("script.caco")
-    tokens = lexer(text)
-    parser(tokens, text)
+    head_token = lexer(text)
+    parser(head_token, text)
 
 if __name__ == '__main__':
     main()

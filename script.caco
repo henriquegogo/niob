@@ -2,8 +2,7 @@ set message "Hello, world"
 puts $message
 
 set text $message
-puts $message
-puts $text
+puts $message; puts $text
 
 message = "Edited"
 puts $message

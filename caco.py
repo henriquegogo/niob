@@ -1,33 +1,5 @@
 IDENTIFIER, STRING, VARIABLE, EOL = 'IDENTIFIER', 'STRING', 'VARIABLE', 'EOL'
 
-class Environment():
-    def func(self, key, cmd):
-        setattr(self, key, cmd)
-
-    def sum(self, a, b):
-        return float(a) + float(b)
-
-class Variable():
-    def __init__(self, key: str = '', value: str = ''):
-        self.key = key
-        self.value = value
-        self.next = None
-
-    def save(self, key: str, value: str):
-        current: Variable = self
-        while current.next != None:
-            current = current.next
-            if current.key == key:
-                current.value = value
-                return
-        current.next = Variable(key, value)
-
-    def find(self, key: str):
-        current: Variable = self
-        while current.next != None:
-            current = current.next
-            if current.key == key: return current.value
-
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
         self.type = type
@@ -35,20 +7,46 @@ class Token():
         self.length = length
         self.next = None
 
-    def add(self, last):
-        current: Token = self
-        while current.next != None: current = current.next
-        current.next = last
+# NODES AND LISTS
+class Node():
+    def __init__(self, key: str = '', value = None):
+        self.key = key
+        self.value = value
+        self.next = None
+
+def set_node(head, key: str, value):
+    current = head
+    while current.next != None:
+        current = current.next
+        if current.key == key:
+            current.value = value
+            return
+    current.next = Node(key, value)
+
+def get_node(head, key: str):
+    current = head
+    while current.next != None:
+        current = current.next
+        if current.key == key:
+            return current.value
+
+def add_node(head, last):
+    current = head
+    while current.next != None:
+        current = current.next
+    current.next = last
+
 
 # PARSER
 def parser(token: Token, text: str):
-    vars = Variable()
+    func = Node()
+    vars = Node()
 
-    env = Environment()
-    env.func('set', vars.save)
-    env.func('=', vars.save)
-    env.func('puts', print)
-    env.func('+', env.sum)
+    set_node(func, 'puts', print)
+    set_node(func, 'set', lambda key, value: set_node(vars, key, value))
+    set_node(func, 'sum', lambda a, b: float(a) + float(b))
+    set_node(func, '=', get_node(func, 'set'))
+    set_node(func, '+', get_node(func, 'sum'))
 
     cmds, cmds_args, args = [], [], []
 
@@ -65,22 +63,22 @@ def parser(token: Token, text: str):
                 if cmd_return:
                     cmds_args[i].append(cmd_return)
                     cmd_return = None
-                cmd_return = getattr(env, cmd)(*cmds_args[i])
+                cmd_return = get_node(func, cmd)(*cmds_args[i])
 
             cmds, cmds_args, args = [], [], []
-        elif token.type == IDENTIFIER and hasattr(env, value):
+        elif token.type == IDENTIFIER and get_node(func, value):
             if len(cmds) > 0:
                 cmds_args.insert(0, args.copy())
                 args = []
             cmds.insert(0, value)
         elif token.type == VARIABLE:
-            args.append(vars.find(value))
+            args.append(get_node(vars, value))
         else:
             args.append(value)
 
 # LEXER
 def is_eol(ch: str) -> bool:
-    return ch == '\n' or ch == '\r'
+    return ch == '\n' or ch == '\r' or ch == ';'
 
 def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
@@ -97,16 +95,16 @@ def lexer(text: str) -> Token:
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            tokens.add(Token(STRING, init_pos + 1, pos - init_pos - 1))
+            add_node(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
-            tokens.add(Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
+            add_node(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
         else:
             while is_char(text[pos]): pos += 1
-            tokens.add(Token(IDENTIFIER, init_pos, pos - init_pos))
+            add_node(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
 
         if is_eol(text[pos]) or is_eol(text[pos + 1]):
-            tokens.add(Token(EOL))
+            add_node(tokens, Token(EOL))
 
         pos += 1
 

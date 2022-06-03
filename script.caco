@@ -1,17 +1,15 @@
 set message "Hello, world"
-set text $message
-message set "Edited"
+puts $message
 
-text set "Já deu"
+set text $message
+puts $message
 puts $text
 
-set age 18
+message = "Edited"
+puts $message
 
-set total sum 25 26
+total = sum 25 26
 puts "Total:" $total
 
 puts 'Sum of sum:' sum 2 sum 3 4
-
-puts $age
-puts $message
 puts "Bye bye, world"

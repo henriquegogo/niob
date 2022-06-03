@@ -14,28 +14,24 @@ class Node():
         self.value = value
         self.next = None
 
-def set_node(head, key: str, value):
-    current = head
-    while current.next != None:
-        current = current.next
-        if current.key == key:
-            current.value = value
+def set_node(node, key: str, value):
+    while node.next != None:
+        node = node.next
+        if node.key == key:
+            node.value = value
             return
-    current.next = Node(key, value)
+    node.next = Node(key, value)
 
-def get_node(head, key: str):
-    current = head
-    while current.next != None:
-        current = current.next
-        if current.key == key:
-            return current.value
+def get_node(node, key: str):
+    while node.next != None:
+        node = node.next
+        if node.key == key:
+            return node.value
 
-def add_node(head, last):
-    current = head
-    while current.next != None:
-        current = current.next
-    current.next = last
-
+def add_node(node, last):
+    while node.next != None:
+        node = node.next
+    node.next = last
 
 # PARSER
 def parser(token: Token, text: str):

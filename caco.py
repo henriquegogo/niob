@@ -8,13 +8,13 @@ class Token():
         self.length = length
         self.next = None
 
-# NODES AND LISTS
 class Node():
     def __init__(self, key: str = '', value = None):
         self.key = key
         self.value = value
         self.next = None
 
+# NODES AND LISTS
 def set_node(node, key: str, value):
     while node.next != None:
         node = node.next

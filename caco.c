@@ -3,93 +3,94 @@
 #include <string.h>
 
 long text_length = 0;
-long pos = 0;
-long tokens_length = 0;
 
+char types[5][16] = {"IDENTIFIER", "STRING", "VARIABLE", "COMMENT", "EOL"};
 typedef enum {
-    IDENTIFIER, STRING, NUMBER, EOL
+    IDENTIFIER, STRING, VARIABLE, COMMENT, EOL
 } Type;
 
-typedef struct {
+// TOKEN METHODS
+typedef struct Token {
     Type type;
     long pos;
     long length;
+    struct Token *next;
 } Token;
 
+void add_token(Token *token, Token *last) {
+    while (token->next) {
+        token = token->next;
+    }
+    token->next = last;
+}
+
+// NODE METHODS
+typedef struct Node {
+    char *key;
+    char *value;
+    struct Node *next;
+} Node;
+
+char *set_node(struct Node node, char *key, char *value) {
+    while (node.next) {
+        node = *node.next;
+        if (strcmp(node.key, key)) {
+            return node.value = value;
+        }
+    }
+    node.next = &((Node){ key, value });
+    return node.next->value;
+}
+
 // PARSER
-void parser(Token *tokens, char *text) {
-    char *cmd = "";
-
-    for (int i = 0; i < tokens_length; i++) {
-        char *value = &text[tokens[i].pos];
-        value[tokens[i].length] = '\0';
-
-        char types[4][16] = {"IDENTIFIER", "STRING", "NUMBER", "EOL"};
-        printf("> %s %s\n", types[tokens[i].type], value);
-
-        if (tokens[i].type == EOL) {
-        }
-        else if (tokens[i].type == IDENTIFIER && !cmd) {
-        }
-        else if (strcmp(cmd, "set")) {
-        }
-        else if (tokens[i].type == IDENTIFIER) {
-        }
-        else {
-        }
+void parser(Token *token, char *text) {
+    while (token->next) {
+        token = token->next;
+        char *value = &text[token->pos];
+        value[token->length] = '\0';
+        printf("> %s %s\n", types[token->type], value);
     }
 }
 
 // LEXER
 int is_eol(char ch) {
-    return ch == '\n' || ch == '\r';
-}
-
-int is_number(char ch) {
-    return ch >= '0' && ch <= '9';
+    return ch == '\n' || ch == '\r' || ch == ';';
 }
 
 int is_char(char ch) {
     return ch != '\t' && ch != ' ' && !is_eol(ch);
 }
 
-int is_quote(char ch) {
-    return ch == '"' || ch == '\'';
-}
-
 Token *lexer(char *text) {
-    Token *tokens = malloc(0);
-    long token_index = 0;
+    long pos = 0;
+    Token *tokens = &((Token){});
     
     while (pos + 1 < text_length) {
-        tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
         while (!is_char(text[pos])) pos += 1;
         long init_pos = pos;
 
-        if (is_quote(text[pos])) {
+        if (text[pos] == '"' || text[pos] == '\'') {
             char quote_char = text[pos];
             pos += 1;
             while (text[pos] != quote_char) pos += 1;
-            tokens[token_index++] = (Token){ STRING, init_pos + 1, pos - init_pos - 1 };
-        }
-        else if (is_number(text[pos])) {
-            while (is_number(text[pos])) pos += 1;
-            tokens[token_index++] = (Token){ NUMBER, init_pos, pos - init_pos };
-        }
-        else {
+            add_token(tokens, &((Token){ STRING, init_pos + 1, pos - init_pos - 1 }));
+        } else if (text[pos] == '$') {
             while (is_char(text[pos])) pos += 1;
-            tokens[token_index++] = (Token){ IDENTIFIER, init_pos, pos - init_pos };
+            add_token(tokens, &((Token){ VARIABLE, init_pos + 1, pos - init_pos - 1 }));
+        } else if (text[pos] == '#') {
+            while (!is_eol(text[pos])) pos += 1;
+            add_token(tokens, &((Token){ COMMENT, init_pos + 1, pos - init_pos - 1 }));
+        } else {
+            while (is_char(text[pos])) pos += 1;
+            add_token(tokens, &((Token){ IDENTIFIER, init_pos, pos - init_pos }));
         }
 
         if (is_eol(text[pos]) || is_eol(text[pos + 1])) {
-            tokens = realloc(tokens, (token_index + 1) * sizeof(Token));
-            tokens[token_index++] = (Token){ EOL };
+            add_token(tokens, &((Token){ EOL }));
         }
 
         pos += 1;
     }
-
-    tokens_length = token_index;
 
     return tokens;
 }
@@ -113,7 +114,6 @@ int main() {
     Token *tokens = lexer(text);
     parser(tokens, text);
 
-    free(tokens);
     free(text);
 
     return 0;

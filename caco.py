@@ -1,5 +1,5 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, EOL = \
-'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EOL'
+IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK, EOL = \
+'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK', 'EOL'
 
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
@@ -52,7 +52,7 @@ def parser(token: Token, text: str):
     set_node(func, '=', get_node(func, 'set'))
     set_node(func, '+', get_node(func, 'sum'))
 
-    cmds, cmds_args, args = [], [], []
+    cmd, args = '', []
 
     while token.next:
         token = token.next
@@ -60,21 +60,17 @@ def parser(token: Token, text: str):
         print("> ", token.type, value)
 
         if token.type == EOL:
-            cmds_args.insert(0, args.copy())
-            cmd_return = None
-
-            for i, cmd in enumerate(cmds):
-                if cmd_return:
-                    cmds_args[i].append(cmd_return)
-                    cmd_return = None
-                cmd_return = get_node(func, cmd)(*cmds_args[i])
-
-            cmds, cmds_args, args = [], [], []
+            cmd_func = get_node(func, cmd)
+            if cmd_func:
+                cmd_return = cmd_func(*args)
+                if cmd_return: return cmd_return
+            cmd, args = '', []
+        elif token.type == BLOCK:
+            block_tokens = lexer(value)
+            block_return = parser(block_tokens, value)
+            args.append(block_return)
         elif token.type == IDENTIFIER and get_node(func, value):
-            if len(cmds) > 0:
-                cmds_args.insert(0, args.copy())
-                args = []
-            cmds.insert(0, value)
+            cmd = value
         elif token.type == VARIABLE:
             args.append(get_node(vars, value))
         elif token.type == COMMENT: pass
@@ -89,10 +85,11 @@ def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
 
 def lexer(text: str) -> Token:
+    text_length: int = len(text)
     pos: int = 0
     tokens: Token = Token()
 
-    while pos + 1 < len(text):
+    while pos + 1 < text_length:
         while not is_char(text[pos]): pos += 1
         init_pos: int = pos
 
@@ -101,6 +98,10 @@ def lexer(text: str) -> Token:
             pos += 1
             while text[pos] != quote_char: pos += 1
             add_node(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
+        elif text[pos] == '(':
+            pos += 1
+            while not text[pos] == ')': pos += 1
+            add_node(tokens, Token(BLOCK, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
             add_node(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
@@ -108,10 +109,10 @@ def lexer(text: str) -> Token:
             while not is_eol(text[pos]): pos += 1
             add_node(tokens, Token(COMMENT, init_pos + 1, pos - init_pos - 1))
         else:
-            while is_char(text[pos]): pos += 1
+            while pos < text_length and is_char(text[pos]): pos += 1
             add_node(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
 
-        if is_eol(text[pos]) or is_eol(text[pos + 1]):
+        if pos >= text_length or is_eol(text[pos]) or is_eol(text[pos + 1]):
             add_node(tokens, Token(EOL))
 
         pos += 1

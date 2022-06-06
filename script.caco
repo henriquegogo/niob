@@ -9,5 +9,5 @@ puts $message; puts $text
 delete text
 puts $text
 
-total = sum 25 26               # Nested functions - TBI
-puts "Total:" $total
+calc = (25 + 26)
+puts "Calculation:" $calc

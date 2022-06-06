@@ -17,11 +17,11 @@ typedef struct Token {
     struct Token *next;
 } Token;
 
-void add_token(Token *token, Token *last) {
-    while (token->next) {
-        token = token->next;
+void add_token(struct Token token, struct Token last) {
+    while (token.next) {
+        token = *token.next;
     }
-    token->next = last;
+    token.next = &last;
 }
 
 // NODE METHODS
@@ -43,12 +43,12 @@ char *set_node(struct Node node, char *key, char *value) {
 }
 
 // PARSER
-void parser(Token *token, char *text) {
-    while (token->next) {
-        token = token->next;
-        char *value = &text[token->pos];
-        value[token->length] = '\0';
-        printf("> %s %s\n", types[token->type], value);
+void parser(struct Token token, char *text) {
+    while (token.next) {
+        token = *token.next;
+        char *value = &text[token.pos];
+        value[token.length] = '\0';
+        printf("> %s %s\n", types[token.type], value);
     }
 }
 
@@ -61,9 +61,9 @@ int is_char(char ch) {
     return ch != '\t' && ch != ' ' && !is_eol(ch);
 }
 
-Token *lexer(char *text) {
+Token lexer(char *text) {
     long pos = 0;
-    Token *tokens = &((Token){});
+    Token tokens = ((Token){});
     
     while (pos + 1 < text_length) {
         while (!is_char(text[pos])) pos += 1;
@@ -73,20 +73,20 @@ Token *lexer(char *text) {
             char quote_char = text[pos];
             pos += 1;
             while (text[pos] != quote_char) pos += 1;
-            add_token(tokens, &((Token){ STRING, init_pos + 1, pos - init_pos - 1 }));
+            add_token(tokens, ((Token){ STRING, init_pos + 1, pos - init_pos - 1 }));
         } else if (text[pos] == '$') {
             while (is_char(text[pos])) pos += 1;
-            add_token(tokens, &((Token){ VARIABLE, init_pos + 1, pos - init_pos - 1 }));
+            add_token(tokens, ((Token){ VARIABLE, init_pos + 1, pos - init_pos - 1 }));
         } else if (text[pos] == '#') {
             while (!is_eol(text[pos])) pos += 1;
-            add_token(tokens, &((Token){ COMMENT, init_pos + 1, pos - init_pos - 1 }));
+            add_token(tokens, ((Token){ COMMENT, init_pos + 1, pos - init_pos - 1 }));
         } else {
             while (is_char(text[pos])) pos += 1;
-            add_token(tokens, &((Token){ IDENTIFIER, init_pos, pos - init_pos }));
+            add_token(tokens, ((Token){ IDENTIFIER, init_pos, pos - init_pos }));
         }
 
         if (is_eol(text[pos]) || is_eol(text[pos + 1])) {
-            add_token(tokens, &((Token){ EOL }));
+            add_token(tokens, ((Token){ EOL }));
         }
 
         pos += 1;
@@ -111,7 +111,7 @@ char *read_file(char *filename) {
 
 int main() {
     char *text = read_file("script.caco");
-    Token *tokens = lexer(text);
+    Token tokens = lexer(text);
     parser(tokens, text);
 
     free(text);

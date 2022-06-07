@@ -43,15 +43,15 @@ def del_node(node, key: str):
 
 # PARSER
 def parser(token: Token, text: str):
-    func = Node()
-    vars = Node()
+    functions = Node()
+    variables = Node()
 
-    set_node(func, 'puts', print)
-    set_node(func, 'set', lambda key, value: set_node(vars, key, value))
-    set_node(func, 'delete', lambda key: del_node(vars, key))
-    set_node(func, 'sum', lambda a, b: float(a) + float(b))
-    set_node(func, '=', get_node(func, 'set'))
-    set_node(func, '+', get_node(func, 'sum'))
+    set_node(functions, 'puts', print)
+    set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
+    set_node(functions, 'delete', lambda key: del_node(variables, key))
+    set_node(functions, 'sum', lambda a, b: float(a) + float(b))
+    set_node(functions, '=', get_node(functions, 'set'))
+    set_node(functions, '+', get_node(functions, 'sum'))
 
     cmd, args = '', []
 
@@ -62,19 +62,19 @@ def parser(token: Token, text: str):
 
         if token.type == EOL:
             cmd_return = ''
-            cmd_func = get_node(func, cmd)
-            if cmd_func:
-                cmd_return = cmd_func(*args)
+            cmd_function = get_node(functions, cmd)
+            if cmd_function:
+                cmd_return = cmd_function(*args)
             cmd, args = '', []
             if cmd_return:
                 return cmd_return, token
         elif token.type == BLOCK:
             block_return, token = parser(token, text)
             args.append(block_return)
-        elif token.type == IDENTIFIER and get_node(func, value):
+        elif token.type == IDENTIFIER and get_node(functions, value):
             cmd = value
         elif token.type == VARIABLE:
-            args.append(get_node(vars, value))
+            args.append(get_node(variables, value))
         elif token.type == COMMENT: pass
         else:
             args.append(value)

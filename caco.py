@@ -1,5 +1,5 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK_IN, BLOCK_OUT, EOL = \
-'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK_IN', 'BLOCK_OUT', 'EOL'
+IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK, EOL = \
+'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK', 'EOL'
 
 # TOKEN
 class Token():
@@ -60,15 +60,15 @@ def parser(token: Token, text: str):
         value = text[token.pos : token.pos + token.length]
         print("> ", token.type, value)
 
-        if token.type == EOL or token.type == BLOCK_OUT:
+        if token.type == EOL:
             cmd_return = ''
             cmd_func = get_node(func, cmd)
             if cmd_func:
                 cmd_return = cmd_func(*args)
+            cmd, args = '', []
             if cmd_return:
                 return cmd_return, token
-            cmd, args = '', []
-        elif token.type == BLOCK_IN:
+        elif token.type == BLOCK:
             block_return, token = parser(token, text)
             args.append(block_return)
         elif token.type == IDENTIFIER and get_node(func, value):
@@ -91,32 +91,38 @@ def lexer(text: str) -> Token:
     pos: int = 0
     tokens: Token = Token()
 
-    while pos + 1 <= text_length:
+    while pos < text_length:
         while not is_char(text[pos]): pos += 1
+        token_type: str = ''
         init_pos: int = pos
 
         if text[pos] == '"' or text[pos] == '\'':
+            token_type = STRING
+            init_pos = pos + 1
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            add_token(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '(':
+            token_type = BLOCK
             pos += 1
-            add_token(tokens, Token(BLOCK_IN))
         elif text[pos] == ')':
+            token_type = EOL
             pos += 1
-            add_token(tokens, Token(BLOCK_OUT))
         elif text[pos] == '$':
+            token_type = VARIABLE
+            init_pos = pos + 1
             while is_char(text[pos]): pos += 1
-            add_token(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '#':
+            token_type = COMMENT
+            init_pos = pos + 1
             while not is_eol(text[pos]): pos += 1
-            add_token(tokens, Token(COMMENT, init_pos + 1, pos - init_pos - 1))
         else:
+            token_type = IDENTIFIER
             while pos < text_length and is_char(text[pos]): pos += 1
-            add_token(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
 
-        if pos >= text_length or is_eol(text[pos]):
+        add_token(tokens, Token(token_type, init_pos, pos - init_pos))
+
+        if is_eol(text[pos]):
             add_token(tokens, Token(EOL))
 
         pos += 1

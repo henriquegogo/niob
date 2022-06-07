@@ -42,10 +42,7 @@ def del_node(node, key: str):
         node = node.next
 
 # PARSER
-def parser(token: Token, text: str):
-    functions = Node()
-    variables = Node()
-
+def parser(token: Token, text: str, variables: Node = Node(), functions: Node = Node()):
     set_node(functions, 'puts', print)
     set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
     set_node(functions, 'delete', lambda key: del_node(variables, key))

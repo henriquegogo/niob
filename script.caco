@@ -9,5 +9,5 @@ puts $message; puts $text
 delete text
 puts $text
 
-calc = (25 + 26)
+calc = ( ( 10 + 5 ) + 26 )
 puts "Calculation:" $calc

@@ -1,5 +1,5 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK, EOL = \
-'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK', 'EOL'
+IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK_IN, BLOCK_OUT, EOL = \
+'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK_IN', 'BLOCK_OUT', 'EOL'
 
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
@@ -59,15 +59,16 @@ def parser(token: Token, text: str):
         value = text[token.pos : token.pos + token.length]
         print("> ", token.type, value)
 
-        if token.type == EOL:
+        if token.type == EOL or token.type == BLOCK_OUT:
+            cmd_return = ''
             cmd_func = get_node(func, cmd)
             if cmd_func:
                 cmd_return = cmd_func(*args)
-                if cmd_return: return cmd_return
+            if cmd_return:
+                return cmd_return, token
             cmd, args = '', []
-        elif token.type == BLOCK:
-            block_tokens = lexer(value)
-            block_return = parser(block_tokens, value)
+        elif token.type == BLOCK_IN:
+            block_return, token = parser(token, text)
             args.append(block_return)
         elif token.type == IDENTIFIER and get_node(func, value):
             cmd = value
@@ -89,7 +90,7 @@ def lexer(text: str) -> Token:
     pos: int = 0
     tokens: Token = Token()
 
-    while pos + 1 < text_length:
+    while pos + 1 <= text_length:
         while not is_char(text[pos]): pos += 1
         init_pos: int = pos
 
@@ -100,8 +101,10 @@ def lexer(text: str) -> Token:
             add_node(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '(':
             pos += 1
-            while not text[pos] == ')': pos += 1
-            add_node(tokens, Token(BLOCK, init_pos + 1, pos - init_pos - 1))
+            add_node(tokens, Token(BLOCK_IN))
+        elif text[pos] == ')':
+            pos += 1
+            add_node(tokens, Token(BLOCK_OUT))
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
             add_node(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
@@ -112,7 +115,7 @@ def lexer(text: str) -> Token:
             while pos < text_length and is_char(text[pos]): pos += 1
             add_node(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
 
-        if pos >= text_length or is_eol(text[pos]) or is_eol(text[pos + 1]):
+        if pos >= text_length or is_eol(text[pos]):
             add_node(tokens, Token(EOL))
 
         pos += 1

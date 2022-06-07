@@ -1,4 +1,4 @@
-BINNAME = caco
+BINNAME = niob
 SRC = $(wildcard *.c)
 CFLAGS = -std=gnu11
 

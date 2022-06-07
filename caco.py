@@ -58,7 +58,6 @@ def parser(token: Token, text: str):
     while token.next:
         token = token.next
         value = text[token.pos : token.pos + token.length]
-        print("> ", token.type, value)
 
         if token.type == EOL:
             cmd_return = ''
@@ -79,9 +78,12 @@ def parser(token: Token, text: str):
         else:
             args.append(value)
 
+        #print(">> ", token.type, value)
+        #print(".. ", "'" + cmd + "'", args)
+
 # LEXER
 def is_eol(ch: str) -> bool:
-    return ch == '\n' or ch == '\r' or ch == ';'
+    return ch == '\n' or ch == '\r' or ch == ';' or ch == ')'
 
 def is_char(ch: str) -> bool:
     return ch != '\t' and ch != ' ' and not is_eol(ch)
@@ -92,7 +94,7 @@ def lexer(text: str) -> Token:
     tokens: Token = Token()
 
     while pos < text_length:
-        while not is_char(text[pos]): pos += 1
+        while text[pos] == ' ': pos += 1
         token_type: str = ''
         init_pos: int = pos
 
@@ -107,17 +109,18 @@ def lexer(text: str) -> Token:
         elif text[pos] == ')':
             token_type = EOL
             pos += 1
+        elif text[pos] == '#':
+            token_type = COMMENT
+            while text[pos] != '\n': pos += 1
         elif text[pos] == '$':
             token_type = VARIABLE
             init_pos = pos + 1
             while is_char(text[pos]): pos += 1
-        elif text[pos] == '#':
-            token_type = COMMENT
-            init_pos = pos + 1
-            while not is_eol(text[pos]): pos += 1
-        else:
+        elif is_char(text[pos]):
             token_type = IDENTIFIER
-            while pos < text_length and is_char(text[pos]): pos += 1
+            while is_char(text[pos]): pos += 1
+        else:
+            token_type = EOL
 
         add_token(tokens, Token(token_type, init_pos, pos - init_pos))
 

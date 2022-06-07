@@ -134,7 +134,7 @@ def read_file(filename: str):
     return "".join(lines)
 
 def main():
-    text = read_file("script.caco")
+    text = read_file("script.nb")
     tokens = lexer(text)
     parser(tokens, text)
 

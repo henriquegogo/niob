@@ -104,7 +104,6 @@ def lexer(text: str) -> Token:
             while text[pos] != quote_char: pos += 1
         elif text[pos] == '(':
             token_type = BLOCK
-            pos += 1
         elif text[pos] == ')':
             token_type = EOL
             pos += 1

@@ -1,6 +1,7 @@
 IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK_IN, BLOCK_OUT, EOL = \
 'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK_IN', 'BLOCK_OUT', 'EOL'
 
+# TOKEN
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
         self.type = type
@@ -8,13 +9,18 @@ class Token():
         self.length = length
         self.next = None
 
+def add_token(node, last):
+    while node.next != None:
+        node = node.next
+    node.next = last
+
+# NODES
 class Node():
     def __init__(self, key: str = '', value = None):
         self.key = key
         self.value = value
         self.next = None
 
-# NODES AND LISTS
 def set_node(node, key: str, value):
     while node.next != None:
         node = node.next
@@ -34,11 +40,6 @@ def del_node(node, key: str):
         if node.next.key == key:
             node.next = node.next.next
         node = node.next
-
-def add_node(node, last):
-    while node.next != None:
-        node = node.next
-    node.next = last
 
 # PARSER
 def parser(token: Token, text: str):
@@ -98,25 +99,25 @@ def lexer(text: str) -> Token:
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            add_node(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
+            add_token(tokens, Token(STRING, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '(':
             pos += 1
-            add_node(tokens, Token(BLOCK_IN))
+            add_token(tokens, Token(BLOCK_IN))
         elif text[pos] == ')':
             pos += 1
-            add_node(tokens, Token(BLOCK_OUT))
+            add_token(tokens, Token(BLOCK_OUT))
         elif text[pos] == '$':
             while is_char(text[pos]): pos += 1
-            add_node(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
+            add_token(tokens, Token(VARIABLE, init_pos + 1, pos - init_pos - 1))
         elif text[pos] == '#':
             while not is_eol(text[pos]): pos += 1
-            add_node(tokens, Token(COMMENT, init_pos + 1, pos - init_pos - 1))
+            add_token(tokens, Token(COMMENT, init_pos + 1, pos - init_pos - 1))
         else:
             while pos < text_length and is_char(text[pos]): pos += 1
-            add_node(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
+            add_token(tokens, Token(IDENTIFIER, init_pos, pos - init_pos))
 
         if pos >= text_length or is_eol(text[pos]):
-            add_node(tokens, Token(EOL))
+            add_token(tokens, Token(EOL))
 
         pos += 1
 

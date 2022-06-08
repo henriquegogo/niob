@@ -1,5 +1,5 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK, EOL = \
-'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK', 'EOL'
+IDENTIFIER, STRING, VARIABLE, COMMENT, EXPRESSION, BLOCK, EOL = \
+'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EXPRESSION', 'BLOCK', 'EOL'
 
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
@@ -70,7 +70,7 @@ def eval(token: Token, text: str):
             cmd, args = '', []
             if cmd_return:
                 return Result(cmd_return, token)
-        elif token.type == BLOCK:
+        elif token.type == EXPRESSION:
             result: Result | None = eval(token, text)
             if result:
                 token = result.current_token
@@ -91,7 +91,7 @@ def is_eol(ch: str) -> bool:
     return ch == '\n' or ch == '\r'
 
 def is_closed(ch: str) -> bool:
-    return ch == ';' or ch == ')'
+    return ch == ';' or ch == ')' or ch == '}'
 
 def is_space(ch: str) -> bool:
     return ch == ' ' or ch == '\t'
@@ -116,8 +116,10 @@ def lexer(text: str) -> Token:
             pos += 1
             while text[pos] != quote_char: pos += 1
         elif text[pos] == '(':
+            token_type = EXPRESSION
+        elif text[pos] == '{':
             token_type = BLOCK
-        elif text[pos] == ')':
+        elif text[pos] == ')' or text[pos] == '}':
             token_type = EOL
             pos += 1
         elif text[pos] == '#':

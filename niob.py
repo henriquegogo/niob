@@ -1,7 +1,6 @@
 IDENTIFIER, STRING, VARIABLE, COMMENT, BLOCK, EOL = \
 'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'BLOCK', 'EOL'
 
-# TOKEN
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
         self.type = type
@@ -9,17 +8,21 @@ class Token():
         self.length = length
         self.next = None
 
-def add_token(node, last):
-    while node.next != None:
-        node = node.next
-    node.next = last
-
-# NODES
 class Node():
     def __init__(self, key: str = '', value = None):
         self.key = key
         self.value = value
         self.next = None
+
+class Result():
+    def __init__(self, content: str = '', token: Token = Token()):
+        self.content = content
+        self.current_token = token
+
+def add_token(node, last):
+    while node.next != None:
+        node = node.next
+    node.next = last
 
 def set_node(node, key: str, value):
     while node.next != None:
@@ -41,8 +44,11 @@ def del_node(node, key: str):
             node.next = node.next.next
         node = node.next
 
-# PARSER
-def parser(token: Token, text: str, variables: Node = Node(), functions: Node = Node()):
+# EVAL
+variables: Node = Node()
+functions: Node = Node()
+
+def eval(token: Token, text: str):
     set_node(functions, 'puts', print)
     set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
     set_node(functions, 'delete', lambda key: del_node(variables, key))
@@ -63,10 +69,12 @@ def parser(token: Token, text: str, variables: Node = Node(), functions: Node = 
                 cmd_return = cmd_function(*args)
             cmd, args = '', []
             if cmd_return:
-                return cmd_return, token
+                return Result(cmd_return, token)
         elif token.type == BLOCK:
-            block_return, token = parser(token, text)
-            args.append(block_return)
+            result: Result | None = eval(token, text)
+            if result:
+                token = result.current_token
+                args.append(result.content)
         elif token.type == IDENTIFIER and get_node(functions, value):
             cmd = value
         elif token.type == VARIABLE:
@@ -80,10 +88,16 @@ def parser(token: Token, text: str, variables: Node = Node(), functions: Node = 
 
 # LEXER
 def is_eol(ch: str) -> bool:
-    return ch == '\n' or ch == '\r' or ch == ';' or ch == ')'
+    return ch == '\n' or ch == '\r'
+
+def is_closed(ch: str) -> bool:
+    return ch == ';' or ch == ')'
+
+def is_space(ch: str) -> bool:
+    return ch == ' ' or ch == '\t'
 
 def is_char(ch: str) -> bool:
-    return ch != '\t' and ch != ' ' and not is_eol(ch)
+    return not is_space(ch) and not is_eol(ch) and not is_closed(ch)
 
 def lexer(text: str) -> Token:
     text_length: int = len(text)
@@ -91,7 +105,7 @@ def lexer(text: str) -> Token:
     tokens: Token = Token()
 
     while pos < text_length:
-        while text[pos] == ' ': pos += 1
+        while is_space(text[pos]): pos += 1
         token_type: str = ''
         init_pos: int = pos
 
@@ -108,7 +122,7 @@ def lexer(text: str) -> Token:
             pos += 1
         elif text[pos] == '#':
             token_type = COMMENT
-            while text[pos] != '\n': pos += 1
+            while not is_eol(text[pos]): pos += 1
         elif text[pos] == '$':
             token_type = VARIABLE
             init_pos = pos + 1
@@ -121,7 +135,7 @@ def lexer(text: str) -> Token:
 
         add_token(tokens, Token(token_type, init_pos, pos - init_pos))
 
-        if is_eol(text[pos]):
+        if is_eol(text[pos]) or is_closed(text[pos]):
             add_token(tokens, Token(EOL))
 
         pos += 1
@@ -136,7 +150,7 @@ def read_file(filename: str):
 def main():
     text = read_file("script.nb")
     tokens = lexer(text)
-    parser(tokens, text)
+    eval(tokens, text)
 
 if __name__ == '__main__':
     main()

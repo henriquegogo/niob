@@ -167,7 +167,7 @@ def read_file(filename: str):
 
 def main():
     global text
-    text = read_file("script.nb")
+    text = read_file("script.nio")
     tokens = lexer(text)
     eval(tokens)
 

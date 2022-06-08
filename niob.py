@@ -1,27 +1,16 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE, EOL = \
-'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EXPRESSION', 'BLOCK_OPEN', 'BLOCK_CLOSE', 'EOL'
-
-class Token():
-    def __init__(self, type: str = '', value: str = ''):
-        self.type = type
-        self.value = value
-        self.next = None
+IDENTIFIER, STRING, VARIABLE, COMMENT, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'EOL'
+EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE = 'EXPR', 'BLCK_O', 'BLCK_C'
 
 class Node():
-    def __init__(self, key: str = '', value = None):
+    def __init__(self, key: str = '', value: str = ''):
         self.key = key
         self.value = value
         self.next = None
 
 class Result():
-    def __init__(self, content: str = '', token: Token = Token()):
+    def __init__(self, content: str = '', node: Node = Node()):
         self.content = content
-        self.current_token = token
-
-def add_token(node, last):
-    while node.next != None:
-        node = node.next
-    node.next = last
+        self.current = node
 
 def set_node(node, key: str, value):
     while node.next != None:
@@ -43,11 +32,16 @@ def del_node(node, key: str):
             node.next = node.next.next
         node = node.next
 
+def add_node(node, last):
+    while node.next != None:
+        node = node.next
+    node.next = last
+
 # EVAL
 variables: Node = Node()
 functions: Node = Node()
 
-def ifs(statement: str, block: Token):
+def ifs(statement: str, block: Node):
     if statement and statement != 'false':
         eval(block)
 
@@ -59,13 +53,13 @@ set_node(functions, 'sum', lambda a, b: float(a) + float(b))
 set_node(functions, '=', get_node(functions, 'set'))
 set_node(functions, '+', get_node(functions, 'sum'))
 
-def eval(token: Token):
+def eval(token: Node):
     cmd, args = '', []
 
     while token.next:
         token = token.next
 
-        if token.type == EOL:
+        if token.key == EOL:
             cmd_return = ''
             cmd_function = get_node(functions, cmd)
             if cmd_function:
@@ -73,26 +67,26 @@ def eval(token: Token):
             cmd, args = '', []
             if cmd_return:
                 return Result(cmd_return, token)
-        elif token.type == EXPRESSION:
+        elif token.key == EXPRESSION:
             result: Result | None = eval(token)
             if result:
-                token = result.current_token
+                token = result.current
                 args.append(result.content)
-        elif token.type == BLOCK_OPEN:
+        elif token.key == BLOCK_OPEN:
             args.append(token)
-            while token.next and token.type != BLOCK_CLOSE:
+            while token.next and token.key != BLOCK_CLOSE:
                 token = token.next
-        elif token.type == BLOCK_CLOSE:
+        elif token.key == BLOCK_CLOSE:
             return Result()
-        elif token.type == IDENTIFIER and get_node(functions, token.value):
+        elif token.key == IDENTIFIER and get_node(functions, token.value):
             cmd = token.value
-        elif token.type == VARIABLE:
+        elif token.key == VARIABLE:
             args.append(get_node(variables, token.value))
-        elif token.type == COMMENT: pass
+        elif token.key == COMMENT: pass
         else:
             args.append(token.value)
 
-        #print(">> ", token.type, value)
+        #print(">> ", token.key, value)
         #print(".. ", "'" + cmd + "'", args)
 
 # LEXER
@@ -108,10 +102,10 @@ def is_space(ch: str) -> bool:
 def is_char(ch: str) -> bool:
     return not is_space(ch) and not is_eol(ch) and not is_closed(ch)
 
-def lexer(text: str) -> Token:
+def lexer(text: str) -> Node:
     text_length: int = len(text)
     pos: int = 0
-    tokens: Token = Token()
+    tokens: Node = Node()
 
     while pos < text_length:
         while is_space(text[pos]): pos += 1
@@ -147,10 +141,10 @@ def lexer(text: str) -> Token:
             token_type = EOL
 
         value = text[init_pos : pos]
-        add_token(tokens, Token(token_type, value))
+        add_node(tokens, Node(token_type, value))
 
         if is_eol(text[pos]) or is_closed(text[pos]):
-            add_token(tokens, Token(EOL))
+            add_node(tokens, Node(EOL))
 
         pos += 1
 

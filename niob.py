@@ -1,13 +1,10 @@
 IDENTIFIER, STRING, VARIABLE, COMMENT, EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE, EOL = \
 'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EXPRESSION', 'BLOCK_OPEN', 'BLOCK_CLOSE', 'EOL'
 
-text: str = ''
-
 class Token():
-    def __init__(self, type: str = '', pos: int = 0, length: int = 0):
+    def __init__(self, type: str = '', value: str = ''):
         self.type = type
-        self.pos = pos
-        self.length = length
+        self.value = value
         self.next = None
 
 class Node():
@@ -65,10 +62,8 @@ set_node(functions, '+', get_node(functions, 'sum'))
 def eval(token: Token):
     cmd, args = '', []
 
-
     while token.next:
         token = token.next
-        value = text[token.pos : token.pos + token.length]
 
         if token.type == EOL:
             cmd_return = ''
@@ -89,13 +84,13 @@ def eval(token: Token):
                 token = token.next
         elif token.type == BLOCK_CLOSE:
             return Result()
-        elif token.type == IDENTIFIER and get_node(functions, value):
-            cmd = value
+        elif token.type == IDENTIFIER and get_node(functions, token.value):
+            cmd = token.value
         elif token.type == VARIABLE:
-            args.append(get_node(variables, value))
+            args.append(get_node(variables, token.value))
         elif token.type == COMMENT: pass
         else:
-            args.append(value)
+            args.append(token.value)
 
         #print(">> ", token.type, value)
         #print(".. ", "'" + cmd + "'", args)
@@ -151,7 +146,8 @@ def lexer(text: str) -> Token:
         else:
             token_type = EOL
 
-        add_token(tokens, Token(token_type, init_pos, pos - init_pos))
+        value = text[init_pos : pos]
+        add_token(tokens, Token(token_type, value))
 
         if is_eol(text[pos]) or is_closed(text[pos]):
             add_token(tokens, Token(EOL))
@@ -166,7 +162,6 @@ def read_file(filename: str):
     return "".join(lines)
 
 def main():
-    global text
     text = read_file("script.nio")
     tokens = lexer(text)
     eval(tokens)

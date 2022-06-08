@@ -1,6 +1,8 @@
 IDENTIFIER, STRING, VARIABLE, COMMENT, EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE, EOL = \
 'IDENTIFIER', 'STRING', 'VARIABLE', 'COMMENT', 'EXPRESSION', 'BLOCK_OPEN', 'BLOCK_CLOSE', 'EOL'
 
+text: str = ''
+
 class Token():
     def __init__(self, type: str = '', pos: int = 0, length: int = 0):
         self.type = type
@@ -48,6 +50,11 @@ def del_node(node, key: str):
 variables: Node = Node()
 functions: Node = Node()
 
+def ifs(statement: str, block: Token):
+    if statement and statement != 'false':
+        eval(block)
+
+set_node(functions, 'if', ifs)
 set_node(functions, 'puts', print)
 set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
 set_node(functions, 'delete', lambda key: del_node(variables, key))
@@ -55,14 +62,9 @@ set_node(functions, 'sum', lambda a, b: float(a) + float(b))
 set_node(functions, '=', get_node(functions, 'set'))
 set_node(functions, '+', get_node(functions, 'sum'))
 
-def eval(token: Token, text: str):
+def eval(token: Token):
     cmd, args = '', []
 
-    def ifs(statement: str, block: Token):
-        if statement and statement != 'false':
-            eval(block, text)
-
-    set_node(functions, 'if', ifs)
 
     while token.next:
         token = token.next
@@ -77,7 +79,7 @@ def eval(token: Token, text: str):
             if cmd_return:
                 return Result(cmd_return, token)
         elif token.type == EXPRESSION:
-            result: Result | None = eval(token, text)
+            result: Result | None = eval(token)
             if result:
                 token = result.current_token
                 args.append(result.content)
@@ -164,9 +166,10 @@ def read_file(filename: str):
     return "".join(lines)
 
 def main():
+    global text
     text = read_file("script.nb")
     tokens = lexer(text)
-    eval(tokens, text)
+    eval(tokens)
 
 if __name__ == '__main__':
     main()

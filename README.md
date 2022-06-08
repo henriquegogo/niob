@@ -1,7 +1,13 @@
 # Niob
-Niob Lang
+Niob Programming Language
 
-## Example:
+## Goals
+- Many 'host languages' implementations
+- Easy to learn how to use and extend
+- Flexible
+- Fun
+
+### Example
 ```ruby
 # Niob is a language for scripting based on TCL and Ruby
 

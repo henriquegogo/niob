@@ -9,10 +9,11 @@ puts $message; puts $text
 delete text
 puts $text
 
-if 'false' {
+if false {
   puts 'True story'
 }
 
 ten = 10
 calc = (($ten + 5 ) + 26)
 puts "Calculation:" $calc
+puts "END OF FILE"

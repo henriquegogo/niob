@@ -81,6 +81,12 @@ def eval(token: Token, text: str):
             if result:
                 token = result.current_token
                 args.append(result.content)
+        elif token.type == BLOCK_OPEN:
+            args.append(token)
+            while token.next and token.type != BLOCK_CLOSE:
+                token = token.next
+        elif token.type == BLOCK_CLOSE:
+            return Result()
         elif token.type == IDENTIFIER and get_node(functions, value):
             cmd = value
         elif token.type == VARIABLE:

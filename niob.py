@@ -48,14 +48,14 @@ def del_node(node, key: str):
 variables: Node = Node()
 functions: Node = Node()
 
-def eval(token: Token, text: str):
-    set_node(functions, 'puts', print)
-    set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
-    set_node(functions, 'delete', lambda key: del_node(variables, key))
-    set_node(functions, 'sum', lambda a, b: float(a) + float(b))
-    set_node(functions, '=', get_node(functions, 'set'))
-    set_node(functions, '+', get_node(functions, 'sum'))
+set_node(functions, 'puts', print)
+set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
+set_node(functions, 'delete', lambda key: del_node(variables, key))
+set_node(functions, 'sum', lambda a, b: float(a) + float(b))
+set_node(functions, '=', get_node(functions, 'set'))
+set_node(functions, '+', get_node(functions, 'sum'))
 
+def eval(token: Token, text: str):
     cmd, args = '', []
 
     while token.next:

@@ -145,7 +145,7 @@ def lexer(text: str) -> Node:
         else:
             add_node(tokens, Node(EOL))
 
-        if is_eol(text[pos]):
+        if is_eol(text[pos]) or is_closed(text[pos]):
             add_node(tokens, Node(EOL))
 
         pos += 1

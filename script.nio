@@ -9,8 +9,24 @@ puts $message; puts $text
 delete text
 puts $text
 
+if true { puts "Simple true if" }
+
 if false {
-  puts 'True story'
+  puts "Simple false if"
+}
+
+if true {
+  puts "IF begin"
+
+  if true {
+    puts "IF NESTED true"
+  }
+
+  if false {
+    puts "IF NESTED false"
+  }
+
+  puts "IF end"
 }
 
 ten = 10

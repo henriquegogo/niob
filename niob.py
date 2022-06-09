@@ -74,8 +74,13 @@ def eval(token: Node):
                 args.append(result.content)
         elif token.key == BLOCK_OPEN:
             args.append(token)
-            while token.next and token.key != BLOCK_CLOSE:
+            blocks_length: int = 1
+            while token.next and blocks_length > 0:
                 token = token.next
+                if token.key == BLOCK_OPEN:
+                    blocks_length += 1
+                elif token.key == BLOCK_CLOSE:
+                    blocks_length -= 1
         elif token.key == BLOCK_CLOSE:
             return Result()
         elif token.key == IDENTIFIER and get_node(functions, token.value):
@@ -94,7 +99,7 @@ def is_eol(ch: str) -> bool:
     return ch == '\n' or ch == '\r'
 
 def is_closed(ch: str) -> bool:
-    return ch == ';' or ch == ')'
+    return ch == ';' or ch == ')' or ch == '}'
 
 def is_space(ch: str) -> bool:
     return ch == ' ' or ch == '\t'
@@ -109,41 +114,38 @@ def lexer(text: str) -> Node:
 
     while pos < text_length:
         while is_space(text[pos]): pos += 1
-        token_type: str = ''
         init_pos: int = pos
 
         if text[pos] == '"' or text[pos] == '\'':
-            token_type = STRING
             init_pos = pos + 1
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
+            add_node(tokens, Node(STRING, text[init_pos : pos]))
         elif text[pos] == '(':
-            token_type = EXPRESSION
+            add_node(tokens, Node(EXPRESSION))
         elif text[pos] == ')':
-            token_type = EOL
+            add_node(tokens, Node(EOL))
             pos += 1
         elif text[pos] == '{':
-            token_type = BLOCK_OPEN
+            add_node(tokens, Node(BLOCK_OPEN))
         elif text[pos] == '}':
-            token_type = BLOCK_CLOSE
+            add_node(tokens, Node(EOL))
+            add_node(tokens, Node(BLOCK_CLOSE))
         elif text[pos] == '#':
-            token_type = COMMENT
+            add_node(tokens, Node(COMMENT))
             while not is_eol(text[pos]): pos += 1
         elif text[pos] == '$':
-            token_type = VARIABLE
             init_pos = pos + 1
             while is_char(text[pos]): pos += 1
+            add_node(tokens, Node(VARIABLE, text[init_pos : pos]))
         elif is_char(text[pos]):
-            token_type = IDENTIFIER
             while is_char(text[pos]): pos += 1
+            add_node(tokens, Node(IDENTIFIER, text[init_pos : pos]))
         else:
-            token_type = EOL
+            add_node(tokens, Node(EOL))
 
-        value = text[init_pos : pos]
-        add_node(tokens, Node(token_type, value))
-
-        if is_eol(text[pos]) or is_closed(text[pos]):
+        if is_eol(text[pos]):
             add_node(tokens, Node(EOL))
 
         pos += 1

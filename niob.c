@@ -8,64 +8,35 @@ typedef enum {
     EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE
 } Type;
 
-typedef struct Node Node;
 struct Node {
     char *key;
     char *value;
-    Node *next;
+    struct Node *next;
 };
 
-typedef struct Result Result;
 struct Result {
     char *content;
     struct Node *current;
 };
 
-char *set_node(struct Node node, char *key, char *value) {
-    while (node.next) {
-        node = *node.next;
-        if (strcmp(node.key, key)) {
-            return node.value = value;
-        }
+void add_node(struct Node *node, char *key, char *value) {
+    while (node->next) {
+        node = node->next;
     }
-    node.next = &((Node){ key, value });
-    return NULL;
-}
-
-char *get_node(struct Node node, char *key) {
-    while (node.next) {
-        node = *node.next;
-        if (strcmp(node.key, key)) {
-            return node.value;
-        }
-    }
-    return NULL;
-}
-
-void del_node(struct Node node, char *key) {
-    while (node.next) {
-        if (strcmp(node.next->key, key)) {
-            node.next = node.next->next;
-        }
-        node = *node.next;
-    }
-}
-
-void add_node(struct Node node, struct Node last) {
-    while (node.next) {
-        node = *node.next;
-    }
-    node.next = &last;
+    node->next = malloc(sizeof(struct Node));
+    node->next->key = key;
+    node->next->value = value;
+    node->next->next = NULL;
 }
 
 // EVAL
-Node *variables = &(Node){};
-Node *functions = &(Node){};
+void eval(struct Node *token) {
 
-Result *eval(Node token) {
-    printf("(%s) %s\n", token.key, token.value);
+    while (token->next) {
+        token = token->next;
 
-    return NULL;
+        printf("(%s) %s\n", token->key, token->value);
+    }
 }
 
 // LEXER
@@ -92,10 +63,11 @@ char *slice(char *text, long start, long end) {
     return value;
 }
 
-Node lexer(char *text) {
+struct Node *lexer(char *text) {
     int text_length = strlen(text);
     long pos = 0;
-    Node tokens = (Node){};
+    struct Node *tokens = malloc(sizeof(struct Node));
+    tokens->next = NULL;
 
     while (pos < text_length) {
         while (is_space(text[pos])) pos += 1;
@@ -106,33 +78,33 @@ Node lexer(char *text) {
             char quote_char = text[pos];
             pos += 1;
             while (text[pos] != quote_char) pos += 1;
-            add_node(tokens, ((Node){ types[STRING], slice(text, init_pos, pos) }));
+            add_node(tokens, types[STRING], slice(text, init_pos, pos));
         } else if (text[pos] == '(') {
-            add_node(tokens, ((Node){ types[EXPRESSION] }));
+            add_node(tokens, types[EXPRESSION], NULL);
         } else if (text[pos] == ')') {
-            add_node(tokens, ((Node){ types[EOL] }));
+            add_node(tokens, types[EOL], NULL);
             pos += 1;
         } else if (text[pos] == '{') {
-            add_node(tokens, ((Node){ types[BLOCK_OPEN] }));
+            add_node(tokens, types[BLOCK_OPEN], NULL);
         } else if (text[pos] == '}') {
-            add_node(tokens, ((Node){ types[EOL] }));
-            add_node(tokens, ((Node){ types[BLOCK_CLOSE] }));
+            add_node(tokens, types[EOL], NULL);
+            add_node(tokens, types[BLOCK_CLOSE], NULL);
         } else if (text[pos] == '#') {
-            add_node(tokens, ((Node){ types[COMMENT] }));
+            add_node(tokens, types[COMMENT], NULL);
             while (!is_eol(text[pos])) pos += 1;
         } else if (text[pos] == '$') {
             init_pos = pos + 1;
             while (is_char(text[pos])) pos += 1;
-            add_node(tokens, ((Node){ types[VARIABLE], slice(text, init_pos, pos) }));
+            add_node(tokens, types[VARIABLE], slice(text, init_pos, pos));
         } else if (is_char(text[pos])) {
             while (is_char(text[pos])) pos += 1;
-            add_node(tokens, ((Node){ types[IDENTIFIER], slice(text, init_pos, pos) }));
+            add_node(tokens, types[IDENTIFIER], slice(text, init_pos, pos));
         } else {
-            add_node(tokens, ((Node){ types[EOL] }));
+            add_node(tokens, types[EOL], NULL);
         }
 
         if (is_eol(text[pos]) || is_closed(text[pos])) {
-            add_node(tokens, ((Node){ types[EOL] }));
+            add_node(tokens, types[EOL], NULL);
         }
 
         pos += 1;
@@ -157,7 +129,7 @@ char *read_file(char *filename) {
 
 int main() {
     char *text = read_file("script.nio");
-    Node tokens = lexer(text);
+    struct Node *tokens = lexer(text);
     eval(tokens);
 
     return 0;

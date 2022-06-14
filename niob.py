@@ -32,10 +32,10 @@ def del_node(node, key: str):
             node.next = node.next.next
         node = node.next
 
-def add_node(node, last):
+def add_node(node, key: str, value = None):
     while node.next != None:
         node = node.next
-    node.next = last
+    node.next = Node(key, value)
 
 # EVAL
 variables: Node = Node()
@@ -121,32 +121,32 @@ def lexer(text: str) -> Node:
             quote_char: str = text[pos]
             pos += 1
             while text[pos] != quote_char: pos += 1
-            add_node(tokens, Node(STRING, text[init_pos : pos]))
+            add_node(tokens, STRING, text[init_pos : pos])
         elif text[pos] == '(':
-            add_node(tokens, Node(EXPRESSION))
+            add_node(tokens, EXPRESSION)
         elif text[pos] == ')':
-            add_node(tokens, Node(EOL))
+            add_node(tokens, EOL)
             pos += 1
         elif text[pos] == '{':
-            add_node(tokens, Node(BLOCK_OPEN))
+            add_node(tokens, BLOCK_OPEN)
         elif text[pos] == '}':
-            add_node(tokens, Node(EOL))
-            add_node(tokens, Node(BLOCK_CLOSE))
+            add_node(tokens, EOL)
+            add_node(tokens, BLOCK_CLOSE)
         elif text[pos] == '#':
-            add_node(tokens, Node(COMMENT))
+            add_node(tokens, COMMENT)
             while not is_eol(text[pos]): pos += 1
         elif text[pos] == '$':
             init_pos = pos + 1
             while is_char(text[pos]): pos += 1
-            add_node(tokens, Node(VARIABLE, text[init_pos : pos]))
+            add_node(tokens, VARIABLE, text[init_pos : pos])
         elif is_char(text[pos]):
             while is_char(text[pos]): pos += 1
-            add_node(tokens, Node(IDENTIFIER, text[init_pos : pos]))
+            add_node(tokens, IDENTIFIER, text[init_pos : pos])
         else:
-            add_node(tokens, Node(EOL))
+            add_node(tokens, EOL)
 
         if is_eol(text[pos]) or is_closed(text[pos]):
-            add_node(tokens, Node(EOL))
+            add_node(tokens, EOL)
 
         pos += 1
 

@@ -62,7 +62,9 @@ void add_node(struct Node node, struct Node last) {
 Node *variables = &(Node){};
 Node *functions = &(Node){};
 
-Result *eval(Node *token) {
+Result *eval(Node token) {
+    printf("(%s) %s\n", token.key, token.value);
+
     return NULL;
 }
 
@@ -105,23 +107,6 @@ Node lexer(char *text) {
             pos += 1;
             while (text[pos] != quote_char) pos += 1;
             add_node(tokens, ((Node){ types[STRING], slice(text, init_pos, pos) }));
-            printf(">> %s\n", slice(text, init_pos, pos));
-        }
-
-        pos += 1;
-    }
-    /*
-    
-    while (pos < text_length) {
-        while (is_space(text[pos])) pos += 1;
-        long init_pos = pos;
-
-        if (text[pos] == '"' || text[pos] == '\'') {
-            init_pos = pos + 1;
-            char quote_char = text[pos];
-            pos += 1;
-            while (text[pos] != quote_char) pos += 1;
-            add_node(tokens, ((Node){ types[STRING], strncpy(text, text + init_pos, pos - init_pos) }));
         } else if (text[pos] == '(') {
             add_node(tokens, ((Node){ types[EXPRESSION] }));
         } else if (text[pos] == ')') {
@@ -138,10 +123,10 @@ Node lexer(char *text) {
         } else if (text[pos] == '$') {
             init_pos = pos + 1;
             while (is_char(text[pos])) pos += 1;
-            add_node(tokens, ((Node){ types[VARIABLE], strncpy(text, text + init_pos, pos - init_pos) }));
+            add_node(tokens, ((Node){ types[VARIABLE], slice(text, init_pos, pos) }));
         } else if (is_char(text[pos])) {
             while (is_char(text[pos])) pos += 1;
-            add_node(tokens, ((Node){ types[IDENTIFIER], strncpy(text, text + init_pos, pos - init_pos) }));
+            add_node(tokens, ((Node){ types[IDENTIFIER], slice(text, init_pos, pos) }));
         } else {
             add_node(tokens, ((Node){ types[EOL] }));
         }
@@ -150,13 +135,10 @@ Node lexer(char *text) {
             add_node(tokens, ((Node){ types[EOL] }));
         }
 
-
         pos += 1;
     }
 
     return tokens;
-    */
-    return (Node){};
 }
 
 char *read_file(char *filename) {
@@ -176,7 +158,7 @@ char *read_file(char *filename) {
 int main() {
     char *text = read_file("script.nio");
     Node tokens = lexer(text);
-    //eval(tokens);
+    eval(tokens);
 
     return 0;
 }

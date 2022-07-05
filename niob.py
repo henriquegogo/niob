@@ -1,165 +1,182 @@
-IDENTIFIER, STRING, VARIABLE, COMMENT, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'EOL'
-EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE = 'EXPR', 'BLCK_O', 'BLCK_C'
+IDF, STR, VAR, CMT, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'EOL'
+EXPR_O, EXPR_C = 'EXPR_O', 'EXPR_C'
+BLCK_O, BLCK_C = 'BLCK_O', 'BLCK_C'
 
-class Node():
-    def __init__(self, key: str = '', value: str = ''):
-        self.key = key
+class Token():
+    def __init__(self, token_type: str = '', token_value: str = ''):
+        self.type: str = token_type
+        self.value: str = token_value
+        self.next = None
+
+def add_token(token, key: str = '', value: str = ''):
+    while token.next != None:
+        token = token.next
+    token.next = Token(key, value)
+
+class Result():
+    def __init__(self, content: str = '', token: Token = Token()):
+        self.last_return = content
+        self.current_token = token
+
+class Command():
+    def __init__(self, key: str = '', value = None):
+        self.key: str = key
         self.value = value
         self.next = None
 
-class Result():
-    def __init__(self, content: str = '', node: Node = Node()):
-        self.content = content
-        self.current = node
-
-def set_node(node, key: str, value):
-    while node.next != None:
-        node = node.next
-        if node.key == key:
-            node.value = value
+def set_cmd(command, key: str, value):
+    while command.next != None:
+        command = command.next
+        if command.key == key:
+            command.value = value
             return
-    node.next = Node(key, value)
+    command.next = Command(key, value)
 
-def get_node(node, key: str):
-    while node.next != None:
-        node = node.next
-        if node.key == key:
-            return node.value
+def get_cmd(command, key: str):
+    while command.next != None:
+        command = command.next
+        if command.key == key:
+            return command.value
 
-def del_node(node, key: str):
-    while node != None:
-        if node.next.key == key:
-            node.next = node.next.next
-        node = node.next
+class Variable():
+    def __init__(self, key: str = '', value: str = ''):
+        self.key: str = key
+        self.value: str = value
+        self.next = None
 
-def add_node(node, key: str, value = None):
-    while node.next != None:
-        node = node.next
-    node.next = Node(key, value)
+def set_var(variable, key: str, value: str):
+    while variable.next != None:
+        variable = variable.next
+        if variable.key == key:
+            variable.value = value
+            return
+    variable.next = Variable(key, value)
 
-# EVAL
-variables: Node = Node()
-functions: Node = Node()
+def get_var(variable, key: str):
+    while variable.next != None:
+        variable = variable.next
+        if variable.key == key:
+            return variable.value
 
-def ifs(statement: str, block: Node):
+commands = Command()
+variables = Variable()
+
+def if_cmd(statement: str, block: Token):
     if statement and statement != 'false':
         eval(block)
 
-set_node(functions, 'if', ifs)
-set_node(functions, 'puts', print)
-set_node(functions, 'set', lambda key, value: set_node(variables, key, value))
-set_node(functions, 'delete', lambda key: del_node(variables, key))
-set_node(functions, 'sum', lambda a, b: float(a) + float(b))
-set_node(functions, '=', get_node(functions, 'set'))
-set_node(functions, '+', get_node(functions, 'sum'))
+set_cmd(commands, 'puts', print)
+set_cmd(commands, 'set', lambda key, value: set_var(variables, key, value))
+set_cmd(commands, 'sum', lambda a, b: float(a) + float(b))
+set_cmd(commands, '=', get_cmd(commands, 'set'))
+set_cmd(commands, '+', get_cmd(commands, 'sum'))
+set_cmd(commands, 'if', if_cmd)
 
-def eval(token: Node):
-    cmd, args = '', []
+def eval(token: Token) -> Result:
+    cmd_key: str = ''
+    cmd_args: list = []
 
     while token.next:
         token = token.next
 
-        if token.key == EOL:
-            cmd_return = ''
-            cmd_function = get_node(functions, cmd)
-            if cmd_function:
-                cmd_return = cmd_function(*args)
-            cmd, args = '', []
-            if cmd_return:
-                return Result(cmd_return, token)
-        elif token.key == EXPRESSION:
-            result: Result | None = eval(token)
-            if result:
-                token = result.current
-                args.append(result.content)
-        elif token.key == BLOCK_OPEN:
-            args.append(token)
+        if token.type == CMT: pass
+        elif token.type == VAR:
+            value = get_var(variables, token.value)
+            cmd_args.append(value)
+        elif token.type == IDF and get_cmd(commands, token.value):
+            cmd_key = token.value
+        elif token.type == IDF or token.type == STR:
+            cmd_args.append(token.value)
+        elif token.type == EXPR_O:
+            result: Result = eval(token)
+            token = result.current_token
+            cmd_args.append(result.last_return)
+        elif token.type == BLCK_O:
+            cmd_args.append(token)
             blocks_length: int = 1
             while token.next and blocks_length > 0:
                 token = token.next
-                if token.key == BLOCK_OPEN:
-                    blocks_length += 1
-                elif token.key == BLOCK_CLOSE:
-                    blocks_length -= 1
-        elif token.key == BLOCK_CLOSE:
+                if token.type == BLCK_O: blocks_length += 1
+                elif token.type == BLCK_C: blocks_length -= 1
+        elif token.type == BLCK_C:
             return Result()
-        elif token.key == IDENTIFIER and get_node(functions, token.value):
-            cmd = token.value
-        elif token.key == VARIABLE:
-            args.append(get_node(variables, token.value))
-        elif token.key == COMMENT: pass
-        else:
-            args.append(token.value)
+        elif token.type == EOL or token.type == EXPR_C:
+            cmd_return: str = ''
+            cmd = get_cmd(commands, cmd_key)
+            if cmd: cmd_return = cmd(*cmd_args)
+            cmd_key = ''
+            cmd_args = []
+            if cmd_return: return Result(cmd_return, token)
 
-        #print(">> ", token.key, value)
-        #print(".. ", "'" + cmd + "'", args)
+    return Result()
 
-# LEXER
-def is_eol(ch: str) -> bool:
-    return ch == '\n' or ch == '\r'
+def is_char(ch: str):
+    return ch != ' ' and ch != '\t' and \
+        ch != ';' and ch != '\n' and \
+        ch != ')'
 
-def is_closed(ch: str) -> bool:
-    return ch == ';' or ch == ')' or ch == '}'
-
-def is_space(ch: str) -> bool:
-    return ch == ' ' or ch == '\t'
-
-def is_char(ch: str) -> bool:
-    return not is_space(ch) and not is_eol(ch) and not is_closed(ch)
-
-def lexer(text: str) -> Node:
+def lexer(text: str) -> Token:
     text_length: int = len(text)
     pos: int = 0
-    tokens: Node = Node()
+    tokens: Token = Token()
 
-    while pos < text_length:
-        while is_space(text[pos]): pos += 1
-        init_pos: int = pos
+    while pos + 1 < text_length:
+        while text[pos] == ' ' or text[pos] == '\t':
+            if pos + 1 == text_length: break
+            pos += 1
 
-        if text[pos] == '"' or text[pos] == '\'':
-            init_pos = pos + 1
+        if text[pos] == '\n' or text[pos] == ';':
+            pos += 1
+            add_token(tokens, EOL)
+        elif text[pos] == '(':
+            pos += 1
+            add_token(tokens, EXPR_O)
+        elif text[pos] == ')':
+            pos += 1
+            add_token(tokens, EXPR_C)
+        elif text[pos] == '{':
+            pos += 1
+            add_token(tokens, BLCK_O)
+        elif text[pos] == '}':
+            pos += 1
+            add_token(tokens, BLCK_C)
+        elif text[pos] == '$':
+            pos += 1
+            init_pos: int = pos
+            while is_char(text[pos]): pos += 1
+            add_token(tokens, VAR, text[init_pos : pos])
+        elif text[pos] == '#':
+            init_pos: int = pos
+            while text[pos] != '\n': pos += 1
+            add_token(tokens, CMT, text[init_pos : pos])
+        elif text[pos] == '"' or text[pos] == '\'':
             quote_char: str = text[pos]
             pos += 1
+            init_pos: int = pos
             while text[pos] != quote_char: pos += 1
-            add_node(tokens, STRING, text[init_pos : pos])
-        elif text[pos] == '(':
-            add_node(tokens, EXPRESSION)
-        elif text[pos] == ')':
-            add_node(tokens, EOL)
             pos += 1
-        elif text[pos] == '{':
-            add_node(tokens, BLOCK_OPEN)
-        elif text[pos] == '}':
-            add_node(tokens, EOL)
-            add_node(tokens, BLOCK_CLOSE)
-        elif text[pos] == '#':
-            add_node(tokens, COMMENT)
-            while not is_eol(text[pos]): pos += 1
-        elif text[pos] == '$':
-            init_pos = pos + 1
-            while is_char(text[pos]): pos += 1
-            add_node(tokens, VARIABLE, text[init_pos : pos])
-        elif is_char(text[pos]):
-            while is_char(text[pos]): pos += 1
-            add_node(tokens, IDENTIFIER, text[init_pos : pos])
+            add_token(tokens, STR, text[init_pos : pos - 1])
         else:
-            add_node(tokens, EOL)
-
-        if is_eol(text[pos]) or is_closed(text[pos]):
-            add_node(tokens, EOL)
-
-        pos += 1
+            init_pos: int = pos
+            while is_char(text[pos]): pos += 1
+            add_token(tokens, IDF, text[init_pos : pos])
 
     return tokens
 
-def read_file(filename: str):
-    file = open(filename, 'r')
-    lines: list = file.readlines()
-    return "".join(lines)
-
 def main():
-    text = read_file("script.nio")
-    tokens = lexer(text)
+    text = """
+        # Script example
+        message = 'Hello, world!'
+        puts $message
+        puts ((1 + 2) + 3)
+        if false {
+            puts "Shouldn't print"
+        }
+        if true {
+            puts "Should print"
+        }
+    """
+    tokens: Token = lexer(text)
     eval(tokens)
 
 if __name__ == '__main__':

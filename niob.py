@@ -125,13 +125,6 @@ def lexer(text: str) -> Token:
             init_pos: int = pos
             while text[pos] != '\n': pos += 1
             add_token(tokens, CMT, text[init_pos : pos])
-        elif text[pos] == '"' or text[pos] == '\'':
-            quote_char: str = text[pos]
-            pos += 1
-            init_pos: int = pos
-            while text[pos] != quote_char: pos += 1
-            pos += 1
-            add_token(tokens, STR, text[init_pos : pos - 1])
         elif text[pos] == '(' or text[pos] == '{':
             open_char: str = text[pos]
             close_char: str = ')' if open_char == '(' else '}'
@@ -144,11 +137,16 @@ def lexer(text: str) -> Token:
                 elif text[pos] == close_char: depth -= 1
                 pos += 1
             add_token(tokens, token_type, text[init_pos : pos])
-        else:
+        elif text[pos] == '"' or text[pos] == '\'':
+            quote_char: str = text[pos]
+            pos += 1
             init_pos: int = pos
-            while is_char(text[pos]):
-                if pos + 1 == text_length: break
-                pos += 1
+            while text[pos] != quote_char: pos += 1
+            pos += 1
+            add_token(tokens, STR, text[init_pos : pos - 1])
+        elif is_char(text[pos]):
+            init_pos: int = pos
+            while is_char(text[pos]): pos += 1
             add_token(tokens, IDF, text[init_pos : pos])
 
     add_token(tokens, EOL)
@@ -162,9 +160,10 @@ def interpret(text: str):
 def main():
     text = """
         # Script example
+        set ten 10
+        puts ((12 + $ten) + 56)
         message = 'Hello, world!'
         puts $message
-        puts ((12 + 34) + 56)
         if false { puts "Shouldn't print" }
         if true {
             puts "Should print"

@@ -119,11 +119,11 @@ def lexer(text: str) -> Token:
         elif text[pos] == '$':
             pos += 1
             init_pos: int = pos
-            while is_char(text[pos]): pos += 1
+            while pos < text_length and is_char(text[pos]): pos += 1
             add_token(tokens, VAR, text[init_pos : pos])
         elif text[pos] == '#':
             init_pos: int = pos
-            while text[pos] != '\n': pos += 1
+            while pos < text_length and text[pos] != '\n': pos += 1
             add_token(tokens, CMT, text[init_pos : pos])
         elif text[pos] == '(' or text[pos] == '{':
             open_char: str = text[pos]
@@ -136,7 +136,7 @@ def lexer(text: str) -> Token:
                 if text[pos] == open_char: depth += 1
                 elif text[pos] == close_char: depth -= 1
                 pos += 1
-            add_token(tokens, token_type, text[init_pos : pos])
+            add_token(tokens, token_type, text[init_pos : pos - 1])
         elif text[pos] == '"' or text[pos] == '\'':
             quote_char: str = text[pos]
             pos += 1
@@ -146,7 +146,7 @@ def lexer(text: str) -> Token:
             add_token(tokens, STR, text[init_pos : pos - 1])
         elif is_char(text[pos]):
             init_pos: int = pos
-            while is_char(text[pos]): pos += 1
+            while pos < text_length and is_char(text[pos]): pos += 1
             add_token(tokens, IDF, text[init_pos : pos])
 
     add_token(tokens, EOL)
@@ -161,7 +161,7 @@ def main():
     text = """
         # Script example
         set ten 10
-        puts ((12 + $ten) + 56)
+        puts ((12 + $ten) + 56 )
         message = 'Hello, world!'
         puts $message
         if false { puts "Shouldn't print" }

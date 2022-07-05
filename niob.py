@@ -35,8 +35,7 @@ def set_cmd(command, key: str, value):
 def get_cmd(command, key: str):
     while command.next != None:
         command = command.next
-        if command.key == key:
-            return command.value
+        if command.key == key: return command.value
 
 class Variable():
     def __init__(self, key: str = '', value: str = ''):
@@ -55,22 +54,20 @@ def set_var(variable, key: str, value: str):
 def get_var(variable, key: str):
     while variable.next != None:
         variable = variable.next
-        if variable.key == key:
-            return variable.value
+        if variable.key == key: return variable.value
 
 commands = Command()
 variables = Variable()
 
-def if_cmd(statement: str, block: Token):
-    if statement and statement != 'false':
-        eval(block)
-
+set_cmd(commands, 'if', lambda statement, block:
+        eval(block) if statement and statement != 'false' else None)
+set_cmd(commands, 'set', lambda key, value:
+        set_var(variables, key, value))
+set_cmd(commands, 'sum', lambda a, b:
+        float(a) + float(b))
 set_cmd(commands, 'puts', print)
-set_cmd(commands, 'set', lambda key, value: set_var(variables, key, value))
-set_cmd(commands, 'sum', lambda a, b: float(a) + float(b))
 set_cmd(commands, '=', get_cmd(commands, 'set'))
 set_cmd(commands, '+', get_cmd(commands, 'sum'))
-set_cmd(commands, 'if', if_cmd)
 
 def eval(token: Token) -> Result:
     cmd_key: str = ''

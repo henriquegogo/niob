@@ -22,9 +22,21 @@ class Command():
     def __init__(self, key: str = '', value = None):
         self.key: str = key
         self.value = value
-        self.next = None
+        self.next: Command | None = None
 
-def set_cmd(command, key: str, value):
+class Variable():
+    def __init__(self, key: str = '', value: str = ''):
+        self.key: str = key
+        self.value: str = value
+        self.next: Variable | None = None
+
+class Env():
+    def __init__(self):
+        self.commands = Command()
+        self.variables = Variable()
+
+def set_cmd(env, key: str, value):
+    command = env.commands
     while command.next != None:
         command = command.next
         if command.key == key:
@@ -32,18 +44,14 @@ def set_cmd(command, key: str, value):
             return
     command.next = Command(key, value)
 
-def get_cmd(command, key: str):
+def get_cmd(env, key: str):
+    command = env.commands
     while command.next != None:
         command = command.next
         if command.key == key: return command.value
 
-class Variable():
-    def __init__(self, key: str = '', value: str = ''):
-        self.key: str = key
-        self.value: str = value
-        self.next = None
-
-def set_var(variable, key: str, value: str):
+def set_var(env, key: str, value: str):
+    variable = env.variables
     while variable.next != None:
         variable = variable.next
         if variable.key == key:
@@ -51,23 +59,23 @@ def set_var(variable, key: str, value: str):
             return
     variable.next = Variable(key, value)
 
-def get_var(variable, key: str):
+def get_var(env, key: str):
+    variable = env.variables
     while variable.next != None:
         variable = variable.next
         if variable.key == key: return variable.value
 
-commands = Command()
-variables = Variable()
+env = Env()
 
-set_cmd(commands, 'if', lambda statement, block:
-        eval(block) if statement and statement != 'false' else None)
-set_cmd(commands, 'set', lambda key, value:
-        set_var(variables, key, value))
-set_cmd(commands, 'sum', lambda a, b:
+set_cmd(env, 'if', lambda envment, block:
+        eval(block) if envment and envment != 'false' else None)
+set_cmd(env, 'set', lambda key, value:
+        set_var(env, key, value))
+set_cmd(env, 'sum', lambda a, b:
         float(a) + float(b))
-set_cmd(commands, 'puts', print)
-set_cmd(commands, '=', get_cmd(commands, 'set'))
-set_cmd(commands, '+', get_cmd(commands, 'sum'))
+set_cmd(env, 'puts', print)
+set_cmd(env, '=', get_cmd(env, 'set'))
+set_cmd(env, '+', get_cmd(env, 'sum'))
 
 def eval(token: Token) -> Result:
     cmd_key: str = ''
@@ -78,9 +86,9 @@ def eval(token: Token) -> Result:
 
         if token.type == CMT: pass
         elif token.type == VAR:
-            value = get_var(variables, token.value)
+            value = get_var(env, token.value)
             cmd_args.append(value)
-        elif token.type == IDF and get_cmd(commands, token.value):
+        elif token.type == IDF and get_cmd(env, token.value):
             cmd_key = token.value
         elif token.type == IDF or token.type == STR:
             cmd_args.append(token.value)
@@ -99,7 +107,7 @@ def eval(token: Token) -> Result:
             return Result()
         elif token.type == EOL or token.type == EXPR_C:
             cmd_return: str = ''
-            cmd = get_cmd(commands, cmd_key)
+            cmd = get_cmd(env, cmd_key)
             if cmd: cmd_return = cmd(*cmd_args)
             cmd_key = ''
             cmd_args = []
@@ -108,9 +116,7 @@ def eval(token: Token) -> Result:
     return Result()
 
 def is_char(ch: str):
-    return ch != ' ' and ch != '\t' and \
-        ch != ';' and ch != '\n' and \
-        ch != ')'
+    return ch != ' ' and ch != '\t' and ch != ';' and ch != '\n' and ch != ')'
 
 def lexer(text: str) -> Token:
     text_length: int = len(text)

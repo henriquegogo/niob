@@ -156,6 +156,8 @@ def lexer(text: str) -> Token:
             while is_char(text[pos]): pos += 1
             add_token(tokens, IDF, text[init_pos : pos])
 
+    add_token(tokens, EOL)
+
     return tokens
 
 def interpret(text: str):
@@ -168,11 +170,11 @@ def main():
         message = 'Hello, world!'
         puts $message
         puts ((1 + 2) + 3)
-        if false {
-            puts "Shouldn't print"
-        }
+        if false { puts "Shouldn't print" }
         if true {
             puts "Should print"
+            if true { puts "Nested printed" }
+            if false { puts "Nested not printed" }
         }
     """
     interpret(text)

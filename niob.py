@@ -161,7 +161,7 @@ def interpret(text: str):
 
 def main():
     text = """
-        # Script example
+        # Niob is a language for scripting based on TCL and Ruby
         set ten 10
         puts ((12 + $ten) + 56 )
         message = 'Hello, world!'

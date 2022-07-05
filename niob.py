@@ -31,6 +31,8 @@ class Env():
 
         set_cmd(self, 'if', lambda condition, block:
                 interpret(block) if condition != 'false' else 0)
+        set_cmd(self, 'def', lambda key, block:
+                set_cmd(self, key, lambda: interpret(block)))
         set_cmd(self, 'set', lambda key, value: set_var(self, key, value))
         set_cmd(self, 'sum', lambda a, b: float(a) + float(b))
         set_cmd(self, 'puts', print)
@@ -170,6 +172,11 @@ def main():
             if true { puts "Nested printed" }
             if false { puts "Nested not printed" }
         }
+        def the_end {
+            puts 'Global var:' $message
+            puts 'END'
+        }
+        the_end
     """
     interpret(text)
 

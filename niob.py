@@ -1,6 +1,5 @@
-IDF, STR, VAR, CMT, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'EOL'
+IDF, STR, VAR, CMT, BLK, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'BLK', 'EOL'
 EXPR_O, EXPR_C = 'EXPR_O', 'EXPR_C'
-BLCK_O, BLCK_C = 'BLCK_O', 'BLCK_C'
 
 class Token():
     def __init__(self, token_type: str = '', token_value: str = ''):
@@ -35,8 +34,8 @@ class Env():
         self.commands = Command()
         self.variables = Variable()
 
-        set_cmd(self, 'if', lambda statement, block:
-                eval(block) if statement and statement != 'false' else None)
+        set_cmd(self, 'if', lambda condition, block:
+                interpret(block) if condition != 'false' else 0)
         set_cmd(self, 'set', lambda key, value: set_var(self, key, value))
         set_cmd(self, 'sum', lambda a, b: float(a) + float(b))
         set_cmd(self, 'puts', print)
@@ -89,19 +88,12 @@ def eval(token: Token) -> Result:
             cmd_key = token.value
         elif token.type == IDF or token.type == STR:
             cmd_args.append(token.value)
+        elif token.type == BLK:
+            cmd_args.append(token.value)
         elif token.type == EXPR_O:
             result: Result = eval(token)
             token = result.current_token
             cmd_args.append(result.last_return)
-        elif token.type == BLCK_O:
-            cmd_args.append(token)
-            blocks_length: int = 1
-            while token.next and blocks_length > 0:
-                token = token.next
-                if token.type == BLCK_O: blocks_length += 1
-                elif token.type == BLCK_C: blocks_length -= 1
-        elif token.type == BLCK_C:
-            return Result()
         elif token.type == EOL or token.type == EXPR_C:
             cmd_return: str = ''
             cmd = get_cmd(env, cmd_key)
@@ -136,10 +128,13 @@ def lexer(text: str) -> Token:
             add_token(tokens, EXPR_C)
         elif text[pos] == '{':
             pos += 1
-            add_token(tokens, BLCK_O)
-        elif text[pos] == '}':
-            pos += 1
-            add_token(tokens, BLCK_C)
+            init_pos: int = pos
+            blocks_length: int = 1
+            while blocks_length > 0:
+                if text[pos] == '{': blocks_length += 1
+                elif text[pos] == '}': blocks_length -= 1
+                pos += 1
+            add_token(tokens, BLK, text[init_pos : pos - 1])
         elif text[pos] == '$':
             pos += 1
             init_pos: int = pos
@@ -163,6 +158,10 @@ def lexer(text: str) -> Token:
 
     return tokens
 
+def interpret(text: str):
+    tokens: Token = lexer(text)
+    eval(tokens)
+
 def main():
     text = """
         # Script example
@@ -176,8 +175,7 @@ def main():
             puts "Should print"
         }
     """
-    tokens: Token = lexer(text)
-    eval(tokens)
+    interpret(text)
 
 if __name__ == '__main__':
     main()

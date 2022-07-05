@@ -35,6 +35,14 @@ class Env():
         self.commands = Command()
         self.variables = Variable()
 
+        set_cmd(self, 'if', lambda statement, block:
+                eval(block) if statement and statement != 'false' else None)
+        set_cmd(self, 'set', lambda key, value: set_var(self, key, value))
+        set_cmd(self, 'sum', lambda a, b: float(a) + float(b))
+        set_cmd(self, 'puts', print)
+        set_cmd(self, '=', get_cmd(self, 'set'))
+        set_cmd(self, '+', get_cmd(self, 'sum'))
+
 def set_cmd(env, key: str, value):
     command = env.commands
     while command.next != None:
@@ -65,21 +73,10 @@ def get_var(env, key: str):
         variable = variable.next
         if variable.key == key: return variable.value
 
-env = Env()
-
-set_cmd(env, 'if', lambda envment, block:
-        eval(block) if envment and envment != 'false' else None)
-set_cmd(env, 'set', lambda key, value:
-        set_var(env, key, value))
-set_cmd(env, 'sum', lambda a, b:
-        float(a) + float(b))
-set_cmd(env, 'puts', print)
-set_cmd(env, '=', get_cmd(env, 'set'))
-set_cmd(env, '+', get_cmd(env, 'sum'))
-
 def eval(token: Token) -> Result:
     cmd_key: str = ''
     cmd_args: list = []
+    env = Env()
 
     while token.next:
         token = token.next

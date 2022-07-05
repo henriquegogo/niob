@@ -1,21 +1,16 @@
-IDF, STR, VAR, CMT, BLK, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'BLK', 'EOL'
-EXPR_O, EXPR_C = 'EXPR_O', 'EXPR_C'
+IDF, STR, VAR, CMT, EOL = 'IDF', 'STR', 'VAR', 'CMT', 'EOL'
+BLCK, EXPR = 'BLCK', 'EXPR'
 
 class Token():
     def __init__(self, token_type: str = '', token_value: str = ''):
         self.type: str = token_type
         self.value: str = token_value
-        self.next = None
+        self.next: Token | None = None
 
 def add_token(token, key: str = '', value: str = ''):
     while token.next != None:
         token = token.next
     token.next = Token(key, value)
-
-class Result():
-    def __init__(self, content: str = '', token: Token = Token()):
-        self.last_return = content
-        self.current_token = token
 
 class Command():
     def __init__(self, key: str = '', value = None):
@@ -72,10 +67,10 @@ def get_var(env, key: str):
         variable = variable.next
         if variable.key == key: return variable.value
 
-def eval(token: Token) -> Result:
+env = Env()
+def eval(token: Token) -> str:
     cmd_key: str = ''
     cmd_args: list = []
-    env = Env()
 
     while token.next:
         token = token.next
@@ -88,24 +83,25 @@ def eval(token: Token) -> Result:
             cmd_key = token.value
         elif token.type == IDF or token.type == STR:
             cmd_args.append(token.value)
-        elif token.type == BLK:
+        elif token.type == EXPR:
+            last_return = interpret(token.value)
+            cmd_args.append(last_return)
+        elif token.type == BLCK:
             cmd_args.append(token.value)
-        elif token.type == EXPR_O:
-            result: Result = eval(token)
-            token = result.current_token
-            cmd_args.append(result.last_return)
-        elif token.type == EOL or token.type == EXPR_C:
+        elif token.type == EOL:
             cmd_return: str = ''
             cmd = get_cmd(env, cmd_key)
             if cmd: cmd_return = cmd(*cmd_args)
             cmd_key = ''
             cmd_args = []
-            if cmd_return: return Result(cmd_return, token)
+            if cmd_return: return cmd_return
 
-    return Result()
+    return ''
 
-def is_char(ch: str):
-    return ch != ' ' and ch != '\t' and ch != ';' and ch != '\n' and ch != ')'
+def is_char(ch: str) :
+    return ch != ' ' and ch != '\t' and \
+           ch != ';' and ch != '\n' and \
+           ch != ')' and ch != '}'
 
 def lexer(text: str) -> Token:
     text_length: int = len(text)
@@ -120,21 +116,6 @@ def lexer(text: str) -> Token:
         if text[pos] == '\n' or text[pos] == ';':
             pos += 1
             add_token(tokens, EOL)
-        elif text[pos] == '(':
-            pos += 1
-            add_token(tokens, EXPR_O)
-        elif text[pos] == ')':
-            pos += 1
-            add_token(tokens, EXPR_C)
-        elif text[pos] == '{':
-            pos += 1
-            init_pos: int = pos
-            blocks_length: int = 1
-            while blocks_length > 0:
-                if text[pos] == '{': blocks_length += 1
-                elif text[pos] == '}': blocks_length -= 1
-                pos += 1
-            add_token(tokens, BLK, text[init_pos : pos - 1])
         elif text[pos] == '$':
             pos += 1
             init_pos: int = pos
@@ -151,9 +132,23 @@ def lexer(text: str) -> Token:
             while text[pos] != quote_char: pos += 1
             pos += 1
             add_token(tokens, STR, text[init_pos : pos - 1])
+        elif text[pos] == '(' or text[pos] == '{':
+            open_char: str = text[pos]
+            close_char: str = ')' if open_char == '(' else '}'
+            token_type: str = EXPR if open_char == '(' else BLCK
+            pos += 1
+            init_pos: int = pos
+            depth: int = 1
+            while depth > 0:
+                if text[pos] == open_char: depth += 1
+                elif text[pos] == close_char: depth -= 1
+                pos += 1
+            add_token(tokens, token_type, text[init_pos : pos])
         else:
             init_pos: int = pos
-            while is_char(text[pos]): pos += 1
+            while is_char(text[pos]):
+                if pos + 1 == text_length: break
+                pos += 1
             add_token(tokens, IDF, text[init_pos : pos])
 
     add_token(tokens, EOL)
@@ -162,14 +157,14 @@ def lexer(text: str) -> Token:
 
 def interpret(text: str):
     tokens: Token = lexer(text)
-    eval(tokens)
+    return eval(tokens)
 
 def main():
     text = """
         # Script example
         message = 'Hello, world!'
         puts $message
-        puts ((1 + 2) + 3)
+        puts ((12 + 34) + 56)
         if false { puts "Shouldn't print" }
         if true {
             puts "Should print"

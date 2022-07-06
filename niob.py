@@ -33,11 +33,15 @@ class Env():
                 interpret(block) if condition != 'false' else 0)
         set_cmd(self, 'def', lambda key, block:
                 set_cmd(self, key, lambda: interpret(block)))
+        set_cmd(self, 'repeat', self.repeat)
         set_cmd(self, 'set', lambda key, value: set_var(self, key, value))
         set_cmd(self, 'sum', lambda a, b: float(a) + float(b))
         set_cmd(self, 'puts', print)
         set_cmd(self, '=', get_cmd(self, 'set'))
         set_cmd(self, '+', get_cmd(self, 'sum'))
+
+    def repeat(self, block):
+        while True: interpret(block)
 
 def set_cmd(env, key: str, value):
     command = env.commands
@@ -177,6 +181,11 @@ def main():
             puts 'END'
         }
         the_end
+        # repeat_count = 0
+        # repeat {
+        #     repeat_count = ($repeat_count + 1)
+        #     puts $repeat_count
+        # }
     """
     interpret(text)
 

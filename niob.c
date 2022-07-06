@@ -2,27 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-char types[8][6] = {"IDF", "STR", "VAR", "CMT", "EOL", "EXPR", "BLCK_O", "BLCK_C"};
+char types[8][6] = {"IDF", "STR", "VAR", "CMT", "EOL", "BLCK", "EXPR"};
 typedef enum {
-    IDENTIFIER, STRING, VARIABLE, COMMENT, EOL,
-    EXPRESSION, BLOCK_OPEN, BLOCK_CLOSE
+    IDF, STR, VAR, CMT, EOL,
+    BLCK, EXPR
 } Type;
-
-struct Node {
-    char *key;
-    char *value;
-    struct Node *next;
-};
 
 struct Token {
     Type type;
     char *value;
     struct Token *next;
-};
-
-struct Result {
-    char *content;
-    struct Node *current;
 };
 
 void add_token(struct Token *token, Type type, char *value) {
@@ -36,47 +25,34 @@ void add_token(struct Token *token, Type type, char *value) {
 }
 
 // EVAL
-void eval(struct Token *token) {
-
+char *eval(struct Token *token) {
     while (token->next) {
         token = token->next;
 
         printf("(%s) %s\n", types[token->type], token->value);
 
-        if (token->type == EOL) {
-        } else if (token->type == EXPRESSION) {
-        } else if (token->type == BLOCK_OPEN) {
-            printf("open\n");
-        } else if (token->type == BLOCK_CLOSE) {
-            printf("close\n");
-        } else if (token->type == IDENTIFIER) {
-        } else if (token->type == VARIABLE) {
-        } else if (token->type == COMMENT) {
-        } else {
+        if (token->type == CMT) {
+        } else if (token->type == VAR) {
+        //} else if (token.type == IDF && get_cmd(env, token.value)) {
+        } else if (token->type == IDF || token->type == STR) {
+        } else if (token->type == EXPR) {
+        } else if (token->type == BLCK) {
+        } else if (token->type == EOL) {
         }
     }
-}
 
-// LEXER
-int is_eol(char ch) {
-    return ch == '\n' || ch == '\r';
-}
-
-int is_closed(char ch) {
-    return ch == ';' || ch == ')' || ch == '}';
-}
-
-int is_space(char ch) {
-    return ch == ' ' || ch == '\t';
+    return "";
 }
 
 int is_char(char ch) {
-    return !is_space(ch) && !is_eol(ch) && !is_closed(ch);
+    return ch != ' ' && ch != '\t' && \
+           ch != ';' && ch != '\n' && \
+           ch != ')' && ch != '}';
 }
 
 char *slice(char *text, long start, long end) {
-    char *value = &text[start];
-    value[end - start] = '\0';
+    char *value = malloc(end - start);
+    strncpy(value, text + start, end - start);
 
     return value;
 }
@@ -87,68 +63,81 @@ struct Token *lexer(char *text) {
     struct Token *tokens = malloc(sizeof(struct Token));
     tokens->next = NULL;
 
-    while (pos < text_length) {
-        while (is_space(text[pos])) pos += 1;
-        long init_pos = pos;
-        
-        if (text[pos] == '"' || text[pos] == '\'') {
-            init_pos = pos + 1;
+    while (pos + 1 < text_length) {
+        while (text[pos] == ' ' || text[pos] == '\t'){
+            if (pos + 1 == text_length) break;
+            pos += 1;
+        }
+
+        if (text[pos] == '\n' || text[pos] == ';') {
+            pos += 1;
+            add_token(tokens, EOL, NULL);
+        } else if (text[pos] == '$') {
+            pos += 1;
+            int init_pos = pos;
+            while (pos < text_length && is_char(text[pos])) pos += 1;
+            add_token(tokens, VAR, slice(text, init_pos, pos));
+        } else if (text[pos] == '#') {
+            int init_pos = pos;
+            while (pos < text_length && text[pos] != '\n') pos += 1;
+            add_token(tokens, CMT, slice(text, init_pos, pos));
+        } else if (text[pos] == '(' || text[pos] == '{') {
+            char open_char = text[pos];
+            char close_char = open_char == '(' ? ')' : '}';
+            Type token_type = open_char == '(' ? EXPR : BLCK;
+            pos += 1;
+            int init_pos = pos;
+            int depth = 1;
+            while (depth > 0) {
+                if (text[pos] == open_char) depth += 1;
+                else if (text[pos] == close_char) depth -= 1;
+                pos += 1;
+            }
+            add_token(tokens, token_type, slice(text, init_pos, pos - 1));
+        } else if (text[pos] == '"' || text[pos] == '\'') {
             char quote_char = text[pos];
             pos += 1;
+            int init_pos = pos;
             while (text[pos] != quote_char) pos += 1;
-            add_token(tokens, STRING, slice(text, init_pos, pos));
-        } else if (text[pos] == '(') {
-            add_token(tokens, EXPRESSION, NULL);
-        } else if (text[pos] == ')') {
-            add_token(tokens, EOL, NULL);
             pos += 1;
-        } else if (text[pos] == '{') {
-            add_token(tokens, BLOCK_OPEN, NULL);
-        } else if (text[pos] == '}') {
-            add_token(tokens, EOL, NULL);
-            add_token(tokens, BLOCK_CLOSE, NULL);
-        } else if (text[pos] == '#') {
-            add_token(tokens, COMMENT, NULL);
-            while (!is_eol(text[pos])) pos += 1;
-        } else if (text[pos] == '$') {
-            init_pos = pos + 1;
-            while (is_char(text[pos])) pos += 1;
-            add_token(tokens, VARIABLE, slice(text, init_pos, pos));
+            add_token(tokens, STR, slice(text, init_pos, pos - 1));
         } else if (is_char(text[pos])) {
-            while (is_char(text[pos])) pos += 1;
-            add_token(tokens, IDENTIFIER, slice(text, init_pos, pos));
-        } else {
-            add_token(tokens, EOL, NULL);
+            int init_pos = pos;
+            while (pos < text_length && is_char(text[pos])) pos += 1;
+            add_token(tokens, IDF, slice(text, init_pos, pos));
         }
-
-        if (is_eol(text[pos]) || is_closed(text[pos])) {
-            add_token(tokens, EOL, NULL);
-        }
-
-        pos += 1;
     }
+
+    add_token(tokens, EOL, NULL);
 
     return tokens;
 }
 
-char *read_file(char *filename) {
-    FILE *file = fopen(filename, "r");
-
-    fseek(file, 0, SEEK_END);
-    long text_length = ftell(file);
-    rewind(file);
-
-    char *text = malloc(text_length * sizeof(char));
-    fread(text, text_length, 1, file);
-    fclose(file);
-    
-    return text;
+char *interpret(char *text) {
+    struct Token *tokens = lexer(text);
+    return eval(tokens);
 }
 
 int main() {
-    char *text = read_file("script.nio");
-    struct Token *tokens = lexer(text);
-    eval(tokens);
+    char *text = "                                              \n\
+        # Niob is a language for scripting based on TCL and Ruby\n\
+        set ten 10                                              \n\
+        puts ((12 + $ten) + 56 )                                \n\
+        message = 'Hello, world!'                               \n\
+        puts $message                                           \n\
+        if false { puts 'Should not print' }                    \n\
+        if true {                                               \n\
+            puts 'Should print'                                 \n\
+            if true { puts 'Nested printed' }                   \n\
+            if false { puts 'Nested not printed' }              \n\
+        }                                                       \n\
+        def the_end {                                           \n\
+            puts 'Global var:' $message                         \n\
+            puts 'END'                                          \n\
+        }                                                       \n\
+        the_end                                                 \n\
+    ";
+    interpret(text);
 
     return 0;
 }

@@ -3,10 +3,7 @@
 #include <string.h>
 
 char types[8][6] = {"IDF", "STR", "VAR", "CMT", "EOL", "BLCK", "EXPR"};
-typedef enum {
-    IDF, STR, VAR, CMT, EOL,
-    BLCK, EXPR
-} Type;
+typedef enum { IDF, STR, VAR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;
@@ -24,17 +21,94 @@ void add_token(struct Token *token, Type type, char *value) {
     token->next->next = NULL;
 }
 
-// EVAL
+struct Command {
+    char *key;
+    char *value;
+    struct Command *next;
+};
+
+struct Variable {
+    char *key;
+    char *value;
+    struct Variable *next;
+};
+
+struct Env {
+    struct Command *commands;
+    struct Variable *variables;
+};
+
+void set_cmd(struct Env *env, char *key, char *value) {
+    struct Command *command = env->commands;
+    while (command->next != NULL) {
+        command = command->next;
+        if (strcmp(command->key, key)) {
+            command->value = value;
+            return;
+        }
+    }
+    command->next = malloc(sizeof(struct Command));
+    command->next->key = key;
+    command->next->value = value;
+    command->next->next = NULL;
+}
+
+char *get_cmd(struct Env *env, char *key) {
+    struct Command *command = env->commands;
+    while (command->next != NULL) {
+        command = command->next;
+        if (strcmp(command->key, key)) return command->value;
+    }
+    return NULL;
+}
+
+void set_var(struct Env *env, char *key, char *value) {
+    struct Variable *variable = env->variables;
+    while (variable->next != NULL) {
+        variable = variable->next;
+        if (strcmp(variable->key, key)) {
+            variable->value = value;
+            return;
+        }
+    }
+    variable->next = malloc(sizeof(struct Variable));
+    variable->next->key = key;
+    variable->next->value = value;
+    variable->next->next = NULL;
+}
+
+char *get_var(struct Env *env, char *key) {
+    struct Variable *variable = env->variables;
+    while (variable->next != NULL) {
+        variable = variable->next;
+        if (strcmp(variable->key, key)) return variable->value;
+    }
+    return NULL;
+}
+
 char *eval(struct Token *token) {
+    struct Env *env = malloc(sizeof(struct Env));
+    env->commands = malloc(sizeof(struct Command));
+    env->commands->next = NULL;
+    env->variables = malloc(sizeof(struct Variable));
+    env->variables->next = NULL;
+
+    char *cmd_key = malloc(sizeof(char));
+
     while (token->next) {
         token = token->next;
 
-        printf("(%s) %s\n", types[token->type], token->value);
+        //printf("(%s) %s\n", types[token->type], token->value);
 
         if (token->type == CMT) {
         } else if (token->type == VAR) {
-        //} else if (token.type == IDF && get_cmd(env, token.value)) {
+            char *value = get_var(env, token->value);
+            printf("VAR: %s\n", value);
+        } else if (token->type == IDF && get_cmd(env, token->value)) {
+            cmd_key = realloc(cmd_key, strlen(token->value));
+            strncpy(cmd_key, token->value, strlen(token->value));
         } else if (token->type == IDF || token->type == STR) {
+            printf("IDF: %s\n", token->value);
         } else if (token->type == EXPR) {
         } else if (token->type == BLCK) {
         } else if (token->type == EOL) {

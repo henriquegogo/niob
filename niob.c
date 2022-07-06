@@ -42,7 +42,7 @@ void set_cmd(struct Env *env, char *key, char *value) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
-        if (strcmp(command->key, key)) {
+        if (strcmp(command->key, key) == 0) {
             command->value = value;
             return;
         }
@@ -57,7 +57,7 @@ char *get_cmd(struct Env *env, char *key) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
-        if (strcmp(command->key, key)) return command->value;
+        if (strcmp(command->key, key) == 0) return command->value;
     }
     return NULL;
 }
@@ -66,7 +66,7 @@ void set_var(struct Env *env, char *key, char *value) {
     struct Variable *variable = env->variables;
     while (variable->next != NULL) {
         variable = variable->next;
-        if (strcmp(variable->key, key)) {
+        if (strcmp(variable->key, key) == 0) {
             variable->value = value;
             return;
         }
@@ -81,17 +81,24 @@ char *get_var(struct Env *env, char *key) {
     struct Variable *variable = env->variables;
     while (variable->next != NULL) {
         variable = variable->next;
-        if (strcmp(variable->key, key)) return variable->value;
+        if (strcmp(variable->key, key) == 0) return variable->value;
     }
     return NULL;
 }
 
+struct Env *env;
 char *eval(struct Token *token) {
-    struct Env *env = malloc(sizeof(struct Env));
+    env = malloc(sizeof(struct Env));
     env->commands = malloc(sizeof(struct Command));
+    env->commands->key = "";
     env->commands->next = NULL;
     env->variables = malloc(sizeof(struct Variable));
+    env->variables->key = "";
     env->variables->next = NULL;
+
+    set_cmd(env, "set", "set");
+    set_cmd(env, "puts", "puts");
+    set_cmd(env, "=", get_cmd(env, "set"));
 
     char *cmd_key = malloc(sizeof(char));
 
@@ -107,11 +114,15 @@ char *eval(struct Token *token) {
         } else if (token->type == IDF && get_cmd(env, token->value)) {
             cmd_key = realloc(cmd_key, strlen(token->value));
             strncpy(cmd_key, token->value, strlen(token->value));
+            printf("IDF CMD: %s (%s)\n", token->value, cmd_key);
         } else if (token->type == IDF || token->type == STR) {
             printf("IDF: %s\n", token->value);
         } else if (token->type == EXPR) {
+            printf("EXPR: %s\n", token->value);
         } else if (token->type == BLCK) {
+            printf("BLCK: %s\n", token->value);
         } else if (token->type == EOL) {
+            printf("EOL: %s\n", cmd_key);
         }
     }
 

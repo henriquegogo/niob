@@ -101,7 +101,7 @@ char *eval(struct Token *token) {
             printf("VAR: %s\n", value);
         } else if (token->type == IDF && get_cmd(env, token->value)) {
             cmd_key = realloc(cmd_key, strlen(token->value));
-            strncpy(cmd_key, token->value, strlen(token->value));
+            strcpy(cmd_key, token->value);
             printf("IDF CMD: %s (%s)\n", token->value, cmd_key);
         } else if (token->type == IDF || token->type == STR) {
             printf("IDF: %s\n", token->value);

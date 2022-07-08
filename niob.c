@@ -23,7 +23,7 @@ void add_token(struct Token *token, Type type, char *value) {
 
 struct Command {
     char *key;
-    char *value;
+    void (*cmd)();
     struct Command *next;
 };
 
@@ -37,27 +37,28 @@ struct Env {
     struct Command *commands;
     struct Variable *variables;
 };
+struct Env *env;
 
-void set_cmd(struct Env *env, char *key, char *value) {
+void set_cmd(struct Env *env, char *key, void (*cmd)()) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
         if (strcmp(command->key, key) == 0) {
-            command->value = value;
+            command->cmd = cmd;
             return;
         }
     }
     command->next = malloc(sizeof(struct Command));
     command->next->key = key;
-    command->next->value = value;
+    command->next->cmd = cmd;
     command->next->next = NULL;
 }
 
-char *get_cmd(struct Env *env, char *key) {
+void *get_cmd(struct Env *env, char *key) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
-        if (strcmp(command->key, key) == 0) return command->value;
+        if (strcmp(command->key, key) == 0) return command->cmd;
     }
     return NULL;
 }
@@ -86,20 +87,7 @@ char *get_var(struct Env *env, char *key) {
     return NULL;
 }
 
-struct Env *env;
 char *eval(struct Token *token) {
-    env = malloc(sizeof(struct Env));
-    env->commands = malloc(sizeof(struct Command));
-    env->commands->key = "";
-    env->commands->next = NULL;
-    env->variables = malloc(sizeof(struct Variable));
-    env->variables->key = "";
-    env->variables->next = NULL;
-
-    set_cmd(env, "set", "set");
-    set_cmd(env, "puts", "puts");
-    set_cmd(env, "=", get_cmd(env, "set"));
-
     char *cmd_key = malloc(sizeof(char));
 
     while (token->next) {
@@ -123,6 +111,8 @@ char *eval(struct Token *token) {
             printf("BLCK: %s\n", token->value);
         } else if (token->type == EOL) {
             printf("EOL: %s\n", cmd_key);
+            void (*cmd)() = get_cmd(env, cmd_key);
+            if (cmd) cmd(cmd_key);
         }
     }
 
@@ -198,7 +188,23 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
+void print(char *value) {
+    printf("%s\n", value);
+}
+
 char *interpret(char *text) {
+    env = malloc(sizeof(struct Env));
+    env->commands = malloc(sizeof(struct Command));
+    env->commands->key = "";
+    env->commands->next = NULL;
+    env->variables = malloc(sizeof(struct Variable));
+    env->variables->key = "";
+    env->variables->next = NULL;
+
+    set_cmd(env, "set", print);
+    set_cmd(env, "puts", print);
+    set_cmd(env, "=", get_cmd(env, "set"));
+
     struct Token *tokens = lexer(text);
     return eval(tokens);
 }

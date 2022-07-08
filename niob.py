@@ -42,6 +42,7 @@ class Env():
 
     def repeat(self, block):
         while True: interpret(block)
+env: Env;
 
 def set_cmd(env, key: str, value):
     command = env.commands
@@ -73,7 +74,6 @@ def get_var(env, key: str):
         variable = variable.next
         if variable.key == key: return variable.value
 
-env = Env()
 def eval(token: Token) -> str:
     cmd_key: str = ''
     cmd_args: list = []
@@ -160,6 +160,9 @@ def lexer(text: str) -> Token:
     return tokens
 
 def interpret(text: str):
+    global env
+    env = Env()
+
     tokens: Token = lexer(text)
     return eval(tokens)
 

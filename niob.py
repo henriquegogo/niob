@@ -160,13 +160,13 @@ def lexer(text: str) -> Token:
     return tokens
 
 def interpret(text: str):
-    global env
-    env = Env()
-
     tokens: Token = lexer(text)
     return eval(tokens)
 
 def main():
+    global env
+    env = Env()
+
     text = """
         # Niob is a language for scripting based on TCL and Ruby
         set ten 10

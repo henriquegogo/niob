@@ -89,19 +89,17 @@ char *get_var(struct Env *env, char *key) {
 
 char *eval(struct Token *token) {
     char *cmd_key = malloc(sizeof(char));
+    char **cmd_args = NULL;
 
     while (token->next) {
         token = token->next;
-
-        //printf("(%s) %s\n", types[token->type], token->value);
 
         if (token->type == CMT) {
         } else if (token->type == VAR) {
             char *value = get_var(env, token->value);
             printf("VAR: %s\n", value);
         } else if (token->type == IDF && get_cmd(env, token->value)) {
-            cmd_key = realloc(cmd_key, strlen(token->value));
-            strcpy(cmd_key, token->value);
+            cmd_key = strdup(token->value);;
             printf("IDF CMD: %s (%s)\n", token->value, cmd_key);
         } else if (token->type == IDF || token->type == STR) {
             printf("IDF: %s\n", token->value);
@@ -128,7 +126,6 @@ int is_char(char ch) {
 char *slice(char *text, long start, long end) {
     char *value = malloc(end - start);
     strncpy(value, text + start, end - start);
-
     return value;
 }
 
@@ -193,6 +190,11 @@ void print(char *value) {
 }
 
 char *interpret(char *text) {
+    struct Token *tokens = lexer(text);
+    return eval(tokens);
+}
+
+int main() {
     env = malloc(sizeof(struct Env));
     env->commands = malloc(sizeof(struct Command));
     env->commands->key = "";
@@ -205,11 +207,6 @@ char *interpret(char *text) {
     set_cmd(env, "puts", print);
     set_cmd(env, "=", get_cmd(env, "set"));
 
-    struct Token *tokens = lexer(text);
-    return eval(tokens);
-}
-
-int main() {
     char *text = "                                              \n\
         # Niob is a language for scripting based on TCL and Ruby\n\
         set ten 10                                              \n\

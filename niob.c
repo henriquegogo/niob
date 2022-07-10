@@ -116,9 +116,12 @@ char *eval(struct Token *token) {
             void (*cmd)() = get_cmd(env, cmd_key);
             if (cmd) cmd(cmd_args);
             cmd_key = strdup("");
-            //free(cmd_args);
-            cmd_args_count = 0;
-            //if (strlen(cmd_return) > 0) return cmd_return;
+            while (cmd_args_count > 0) {
+                cmd_args[cmd_args_count] = strdup("");
+                free(cmd_args[cmd_args_count]);
+                cmd_args_count -= 1;
+            }
+            if (strlen(cmd_return) > 0) return cmd_return;
         }
     }
 

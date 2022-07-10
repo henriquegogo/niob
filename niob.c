@@ -117,9 +117,9 @@ char *eval(struct Token *token) {
             if (cmd) cmd(cmd_args);
             cmd_key = strdup("");
             while (cmd_args_count > 0) {
+                cmd_args_count -= 1;
                 cmd_args[cmd_args_count] = strdup("");
                 free(cmd_args[cmd_args_count]);
-                cmd_args_count -= 1;
             }
             if (strlen(cmd_return) > 0) return cmd_return;
         }

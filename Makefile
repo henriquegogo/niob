@@ -14,3 +14,5 @@ run:
 
 clean:
 	rm $(BINNAME)
+
+test: all run clean

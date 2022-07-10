@@ -88,8 +88,9 @@ char *get_var(struct Env *env, char *key) {
 }
 
 char *eval(struct Token *token) {
-    char *cmd_key = malloc(sizeof(char));
-    char **cmd_args = NULL;
+    char *cmd_key = malloc(1);
+    char **cmd_args = malloc(1);
+    int cmd_args_count = 0;
 
     while (token->next) {
         token = token->next;
@@ -97,20 +98,27 @@ char *eval(struct Token *token) {
         if (token->type == CMT) {
         } else if (token->type == VAR) {
             char *value = get_var(env, token->value);
-            printf("VAR: %s\n", value);
+            cmd_args[cmd_args_count] = strdup(value);
+            cmd_args_count += 1;
         } else if (token->type == IDF && get_cmd(env, token->value)) {
-            cmd_key = strdup(token->value);;
-            printf("IDF CMD: %s (%s)\n", token->value, cmd_key);
+            cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR) {
-            printf("IDF: %s\n", token->value);
+            cmd_args[cmd_args_count] = strdup(token->value);
+            cmd_args_count += 1;
         } else if (token->type == EXPR) {
-            printf("EXPR: %s\n", token->value);
+            //cmd_args[cmd_args_count] = strdup(interpret(token->value));
+            //cmd_args_count += 1;
         } else if (token->type == BLCK) {
-            printf("BLCK: %s\n", token->value);
+            cmd_args[cmd_args_count] = strdup(token->value);
+            cmd_args_count += 1;
         } else if (token->type == EOL) {
-            printf("EOL: %s\n", cmd_key);
+            char *cmd_return = malloc(1);
             void (*cmd)() = get_cmd(env, cmd_key);
-            if (cmd) cmd(cmd_key);
+            if (cmd) cmd(cmd_args);
+            cmd_key = strdup("");
+            //free(cmd_args);
+            cmd_args_count = 0;
+            //if (strlen(cmd_return) > 0) return cmd_return;
         }
     }
 
@@ -185,13 +193,17 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-void print(char *value) {
-    printf("%s\n", value);
+void print(char **argv) {
+    printf("%s\n", argv[0]);
 }
 
 char *interpret(char *text) {
     struct Token *tokens = lexer(text);
     return eval(tokens);
+}
+
+void set_var_func(char **argv) {
+    set_var(env, argv[0], argv[1]);
 }
 
 int main() {
@@ -203,27 +215,27 @@ int main() {
     env->variables->key = "";
     env->variables->next = NULL;
 
-    set_cmd(env, "set", print);
+    set_cmd(env, "set", set_var_func);
     set_cmd(env, "puts", print);
     set_cmd(env, "=", get_cmd(env, "set"));
 
-    char *text = "                                              \n\
-        # Niob is a language for scripting based on TCL and Ruby\n\
-        set ten 10                                              \n\
-        puts ((12 + $ten) + 56 )                                \n\
-        message = 'Hello, world!'                               \n\
-        puts $message                                           \n\
-        if false { puts 'Should not print' }                    \n\
-        if true {                                               \n\
-            puts 'Should print'                                 \n\
-            if true { puts 'Nested printed' }                   \n\
-            if false { puts 'Nested not printed' }              \n\
-        }                                                       \n\
-        def the_end {                                           \n\
-            puts 'Global var:' $message                         \n\
-            puts 'END'                                          \n\
-        }                                                       \n\
-        the_end                                                 \n\
+    char *text = "                                               \n\
+        # Niob is a language for scripting based on TCL and Ruby \n\
+        set ten 10                                               \n\
+        puts ((12 + $ten) + 56 )                                 \n\
+        message = 'Hello, world!'                                \n\
+        puts $message                                            \n\
+        if false { puts 'Should not print' }                     \n\
+        if true {                                                \n\
+            puts 'Should print'                                  \n\
+            if true { puts 'Nested printed' }                    \n\
+            if false { puts 'Nested not printed' }               \n\
+        }                                                        \n\
+        def the_end {                                            \n\
+            puts 'Global var:' $message                          \n\
+            puts 'END'                                           \n\
+        }                                                        \n\
+        the_end                                                  \n\
     ";
     interpret(text);
 

@@ -173,11 +173,11 @@ def main():
         puts ((12 + $ten) + 56 )
         message = 'Hello, world!'
         puts $message
-        if false { puts "Shouldn't print" }
+        if false { puts 'Should not print' }
         if true {
-            puts "Should print"
-            if true { puts "Nested printed" }
-            if false { puts "Nested not printed" }
+            puts 'Should print'
+            if true { puts 'Nested printed' }
+            if false { puts 'Nested not printed' }
         }
         def the_end {
             puts 'Global var:' $message

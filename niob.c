@@ -231,14 +231,15 @@ char *builtin_operators(char *cmd, char **argv) {
     float a = strtof(argv[0], NULL);
     float b = strtof(argv[1], NULL);
     return (
-            strcmp(cmd, "&&") == 0 && a_is_true && b_is_true ? "true" :
-            strcmp(cmd, "||") == 0 && (a_is_true || b_is_true) ? "true" :
-            strcmp(cmd, "==") == 0 && is_equal ? "true" :
-            strcmp(cmd, "!=") == 0 && !is_equal ? "true" :
-            strcmp(cmd, ">=") == 0 && a >= b ? "true" :
-            strcmp(cmd, "<=") == 0 && a <= b ? "true" :
-            strcmp(cmd, ">") == 0 && a > b ? "true" :
-            strcmp(cmd, "<") == 0 && a < b ? "true" : "false"
+            strcmp(cmd, "&&") == 0 && a_is_true && b_is_true ||
+            strcmp(cmd, "||") == 0 && (a_is_true || b_is_true) ||
+            strcmp(cmd, "==") == 0 && is_equal ||
+            strcmp(cmd, "!=") == 0 && !is_equal ||
+            strcmp(cmd, ">=") == 0 && a >= b ||
+            strcmp(cmd, "<=") == 0 && a <= b ||
+            strcmp(cmd, ">") == 0 && a > b ||
+            strcmp(cmd, "<") == 0 && a < b ?
+            "true" : "false"
            );
 }
 

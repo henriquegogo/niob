@@ -114,6 +114,7 @@ char *eval(struct Token *token) {
             char *cmd_return = malloc(1);
             char *(*cmd)() = get_cmd(cmd_key);
             if (cmd) cmd_return = strdup(cmd(cmd_key, cmd_args));
+            else if (cmd_args[0]) cmd_return = strdup(cmd_args[0]);
             cmd_key = strdup("");
             while (cmd_args_count > 0) cmd_args[--cmd_args_count] = strdup("");
             if (strlen(cmd_return) > 0) return cmd_return;
@@ -218,9 +219,27 @@ char *builtin_math(char *cmd, char **argv) {
             strcmp(cmd, "+") == 0 ? a + b :
             strcmp(cmd, "-") == 0 ? a - b :
             strcmp(cmd, "*") == 0 ? a * b :
-            strcmp(cmd, "/") == 0 ? a / b :
-            0);
+            strcmp(cmd, "/") == 0 ? a / b : 0
+           );
     return output;
+}
+
+char *builtin_operators(char *cmd, char **argv) {
+    int is_equal = strcmp(argv[0], argv[1]) == 0;
+    int a_is_true = strcmp(argv[0], "true") == 0;
+    int b_is_true = strcmp(argv[1], "true") == 0;
+    float a = strtof(argv[0], NULL);
+    float b = strtof(argv[1], NULL);
+    return (
+            strcmp(cmd, "&&") == 0 && a_is_true && b_is_true ? "true" :
+            strcmp(cmd, "||") == 0 && (a_is_true || b_is_true) ? "true" :
+            strcmp(cmd, "==") == 0 && is_equal ? "true" :
+            strcmp(cmd, "!=") == 0 && !is_equal ? "true" :
+            strcmp(cmd, ">=") == 0 && a >= b ? "true" :
+            strcmp(cmd, "<=") == 0 && a <= b ? "true" :
+            strcmp(cmd, ">") == 0 && a > b ? "true" :
+            strcmp(cmd, "<") == 0 && a < b ? "true" : "false"
+           );
 }
 
 char *builtin_puts(char *cmd, char **argv) {
@@ -248,6 +267,14 @@ int main() {
     set_cmd("-", builtin_math);
     set_cmd("*", builtin_math);
     set_cmd("/", builtin_math);
+    set_cmd("&&", builtin_operators);
+    set_cmd("||", builtin_operators);
+    set_cmd("==", builtin_operators);
+    set_cmd("!=", builtin_operators);
+    set_cmd(">=", builtin_operators);
+    set_cmd("<=", builtin_operators);
+    set_cmd(">", builtin_operators);
+    set_cmd("<", builtin_operators);
     set_cmd("=", get_cmd("set"));
 
     char *text = "                                               \n\
@@ -257,7 +284,7 @@ int main() {
         message = 'Hello, world!'                                \n\
         puts $message                                            \n\
         if false { puts 'Should not print' }                     \n\
-        if true {                                                \n\
+        if (2 > 1) {                                             \n\
             puts 'Should print'                                  \n\
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\

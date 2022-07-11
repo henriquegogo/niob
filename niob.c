@@ -92,8 +92,8 @@ char *get_var(char *key) {
 
 char *eval(struct Token *token) {
     char *cmd_key = malloc(1);
-    char **cmd_args = malloc(1);
-    int cmd_args_count = 0;
+    char **args = malloc(1);
+    int args_count = 0;
 
     while (token->next) {
         token = token->next;
@@ -101,23 +101,23 @@ char *eval(struct Token *token) {
         if (token->type == CMT) {
         } else if (token->type == VAR) {
             char *value = get_var(token->value);
-            cmd_args[cmd_args_count++] = strdup(value);
+            args[args_count++] = strdup(value);
         } else if (token->type == IDF && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR) {
-            cmd_args[cmd_args_count++] = strdup(token->value);
+            args[args_count++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            cmd_args[cmd_args_count++] = strdup(interpret(token->value));
+            args[args_count++] = strdup(interpret(token->value));
         } else if (token->type == BLCK) {
-            cmd_args[cmd_args_count++] = strdup(token->value);
+            args[args_count++] = strdup(token->value);
         } else if (token->type == EOL) {
-            char *cmd_return = malloc(1);
+            char *output = malloc(1);
             char *(*cmd)() = get_cmd(cmd_key);
-            if (cmd) cmd_return = strdup(cmd(cmd_key, cmd_args));
-            else if (cmd_args[0]) cmd_return = strdup(cmd_args[0]);
+            if (cmd) output = strdup(cmd(cmd_key, args));
+            else if (args[0]) output = strdup(args[0]);
             cmd_key = strdup("");
-            while (cmd_args_count > 0) cmd_args[--cmd_args_count] = strdup("");
-            if (strlen(cmd_return) > 0) return cmd_return;
+            while (args_count > 0) args[--args_count] = strdup("");
+            if (strlen(output) > 0) return output;
         }
     }
 
@@ -198,6 +198,7 @@ char *interpret(char *text) {
 }
 
 char *builtin_if(char *cmd, char **argv) {
+    // Interact argv and use recusiveness for else
     return (
             strlen(argv[0]) > 0 &&
             strcmp(argv[0], "false") != 0 &&
@@ -207,7 +208,7 @@ char *builtin_if(char *cmd, char **argv) {
 }
 
 char *builtin_def(char *cmd, char **argv) {
-    set_cmd(argv[0], interpret); // how to lambda interpret(argv[1])
+    //set_cmd(argv[0], interpret); // how to lambda interpret(argv[1])
     return "";
 }
 
@@ -266,7 +267,7 @@ int main() {
     env->variables->next = NULL;
 
     set_cmd("if", builtin_if);
-    //set_cmd("def", builtin_def);
+    set_cmd("def", builtin_def);
     set_cmd("set", builtin_set);
     set_cmd("puts", builtin_puts);
     set_cmd("+", builtin_math);

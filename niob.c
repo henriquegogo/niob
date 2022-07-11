@@ -198,7 +198,12 @@ char *interpret(char *text) {
 }
 
 char *builtin_if(char *cmd, char **argv) {
-    return (strcmp(argv[0], "false") != 0) ? interpret(argv[1]) : "";
+    return (
+            strlen(argv[0]) > 0 &&
+            strcmp(argv[0], "false") != 0 &&
+            strcmp(argv[0], "0") != 0 ?
+            interpret(argv[1]) : ""
+           );
 }
 
 char *builtin_def(char *cmd, char **argv) {

@@ -87,7 +87,7 @@ char *get_var(char *key) {
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) return variable->value;
     }
-    return NULL;
+    return "";
 }
 
 char *eval(struct Token *token) {
@@ -191,14 +191,6 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-char *print(char **argv) {
-    while (*argv) {
-        printf("%s", *argv++);
-        printf(*argv ? " " : "\n");
-    }
-    return "";
-}
-
 char *interpret(char *text) {
     struct Token *tokens = lexer(text);
     return eval(tokens);
@@ -226,6 +218,14 @@ char *sum_cmd(char **argv) {
     return output;
 }
 
+char *puts_cmd(char **argv) {
+    while (*argv) {
+        printf("%s", *argv++);
+        printf(*argv ? " " : "\n");
+    }
+    return "";
+}
+
 int main() {
     env = malloc(sizeof(struct Env));
     env->commands = malloc(sizeof(struct Command));
@@ -239,7 +239,7 @@ int main() {
     set_cmd("def", def_cmd);
     set_cmd("set", set_var_cmd);
     set_cmd("sum", sum_cmd);
-    set_cmd("puts", print);
+    set_cmd("puts", puts_cmd);
     set_cmd("=", get_cmd("set"));
     set_cmd("+", get_cmd("sum"));
 

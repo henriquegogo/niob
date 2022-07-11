@@ -263,10 +263,11 @@ char *builtin_operators(char *cmd, char **argv) {
 }
 
 char *builtin_puts(char *cmd, char **argv) {
-    while (*argv) {
-        printf("%s", *argv++);
-        printf(*argv ? " " : "\n");
+    for (int i = 0; argv[i]; i++) {
+        if (i > 0) printf(" ");
+        printf("%s", argv[i]);
     }
+    printf("\n");
     return "";
 }
 
@@ -303,7 +304,7 @@ int main() {
         puts (2 * ((12 + $ten) + 56 ))                           \n\
         delete ten                                               \n\
         message = 'Hello, world!'                                \n\
-        puts $message $ten                                       \n\
+        puts $ten $message I'm fine.                             \n\
         if false { puts 'Should not print' }                     \n\
         if (2 > 1) {                                             \n\
             puts 'Should print'                                  \n\

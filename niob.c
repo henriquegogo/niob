@@ -113,7 +113,7 @@ char *eval(struct Token *token) {
         } else if (token->type == EOL) {
             char *cmd_return = malloc(1);
             char *(*cmd)() = get_cmd(cmd_key);
-            if (cmd) cmd_return = strdup(cmd(cmd_args));
+            if (cmd) cmd_return = strdup(cmd(cmd_key, cmd_args));
             cmd_key = strdup("");
             while (cmd_args_count > 0) cmd_args[--cmd_args_count] = strdup("");
             if (strlen(cmd_return) > 0) return cmd_return;
@@ -196,29 +196,34 @@ char *interpret(char *text) {
     return eval(tokens);
 }
 
-char *if_cmd(char **argv) {
+char *builtin_if(char *cmd, char **argv) {
     return (strcmp(argv[0], "false") != 0) ? interpret(argv[1]) : "";
 }
 
-char *def_cmd(char **argv) {
+char *builtin_def(char *cmd, char **argv) {
     set_cmd(argv[0], interpret); // how to lambda interpret(argv[1])
     return "";
 }
 
-char *set_var_cmd(char **argv) {
+char *builtin_set(char *cmd, char **argv) {
     set_var(argv[0], argv[1]);
     return "";
 }
 
-char *sum_cmd(char **argv) {
+char *builtin_math(char *cmd, char **argv) {
     float a = strtof(argv[0], NULL);
     float b = strtof(argv[1], NULL);
     char *output = malloc(64);
-    sprintf(output, "%.2f", a + b);
+    sprintf(output, "%.2f",
+            strcmp(cmd, "+") == 0 ? a + b :
+            strcmp(cmd, "-") == 0 ? a - b :
+            strcmp(cmd, "*") == 0 ? a * b :
+            strcmp(cmd, "/") == 0 ? a / b :
+            0);
     return output;
 }
 
-char *puts_cmd(char **argv) {
+char *builtin_puts(char *cmd, char **argv) {
     while (*argv) {
         printf("%s", *argv++);
         printf(*argv ? " " : "\n");
@@ -235,18 +240,20 @@ int main() {
     env->variables->key = "";
     env->variables->next = NULL;
 
-    set_cmd("if", if_cmd);
-    set_cmd("def", def_cmd);
-    set_cmd("set", set_var_cmd);
-    set_cmd("sum", sum_cmd);
-    set_cmd("puts", puts_cmd);
+    set_cmd("if", builtin_if);
+    //set_cmd("def", builtin_def);
+    set_cmd("set", builtin_set);
+    set_cmd("puts", builtin_puts);
+    set_cmd("+", builtin_math);
+    set_cmd("-", builtin_math);
+    set_cmd("*", builtin_math);
+    set_cmd("/", builtin_math);
     set_cmd("=", get_cmd("set"));
-    set_cmd("+", get_cmd("sum"));
 
     char *text = "                                               \n\
         # Niob is a language for scripting based on TCL and Ruby \n\
         set ten 10                                               \n\
-        puts ((12 + $ten) + 56 )                                 \n\
+        puts (2 * ((12 + $ten) + 56 ))                           \n\
         message = 'Hello, world!'                                \n\
         puts $message                                            \n\
         if false { puts 'Should not print' }                     \n\

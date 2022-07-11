@@ -205,8 +205,12 @@ char *eval(char *text) {
     return interpret(tokens);
 }
 
+char *builtin_eval(char *cmd, char **argv) {
+    eval(argv[0]);
+    return "";;
+}
+
 char *builtin_if(char *cmd, char **argv) {
-    // Interact argv and use recusiveness for else
     return (
             strlen(argv[0]) > 0 &&
             strcmp(argv[0], "false") != 0 &&
@@ -216,7 +220,7 @@ char *builtin_if(char *cmd, char **argv) {
 }
 
 char *builtin_def(char *cmd, char **argv) {
-    //set_cmd(argv[0], eval); // how to lambda eval(argv[1])
+    set_cmd(argv[0], builtin_eval);
     return "";
 }
 
@@ -275,6 +279,7 @@ void init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
+    set_cmd("eval", builtin_eval);
     set_cmd("if", builtin_if);
     set_cmd("def", builtin_def);
     set_cmd("set", builtin_set);

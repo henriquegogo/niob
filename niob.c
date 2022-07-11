@@ -23,12 +23,9 @@ struct Variable {
     struct Variable *next;
 };
 
-struct Env {
-    struct Command *commands;
-    struct Variable *variables;
-};
+struct Command *commands;
 
-struct Env *env;
+struct Variable *variables;
 
 char *interpret(char *text);
 
@@ -39,12 +36,11 @@ void add_token(struct Token *token, Type type, char *value) {
     token->next = malloc(sizeof(struct Token));
     token->next->type = type;
     token->next->value = value;
-    token->next->next = NULL;
 }
 
 void set_cmd(char *key, char *(*cmd)()) {
-    struct Command *command = env->commands;
-    while (command->next != NULL) {
+    struct Command *command = commands;
+    while (command->next) {
         command = command->next;
         if (strcmp(command->key, key) == 0) {
             command->cmd = cmd;
@@ -54,12 +50,11 @@ void set_cmd(char *key, char *(*cmd)()) {
     command->next = malloc(sizeof(struct Command));
     command->next->key = key;
     command->next->cmd = cmd;
-    command->next->next = NULL;
 }
 
 void *get_cmd(char *key) {
-    struct Command *command = env->commands;
-    while (command->next != NULL) {
+    struct Command *command = commands;
+    while (command->next) {
         command = command->next;
         if (strcmp(command->key, key) == 0) return command->cmd;
     }
@@ -67,8 +62,8 @@ void *get_cmd(char *key) {
 }
 
 void set_var(char *key, char *value) {
-    struct Variable *variable = env->variables;
-    while (variable->next != NULL) {
+    struct Variable *variable = variables;
+    while (variable->next) {
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) {
             variable->value = value;
@@ -78,12 +73,11 @@ void set_var(char *key, char *value) {
     variable->next = malloc(sizeof(struct Variable));
     variable->next->key = key;
     variable->next->value = value;
-    variable->next->next = NULL;
 }
 
 char *get_var(char *key) {
-    struct Variable *variable = env->variables;
-    while (variable->next != NULL) {
+    struct Variable *variable = variables;
+    while (variable->next) {
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) return variable->value;
     }
@@ -140,7 +134,6 @@ struct Token *lexer(char *text) {
     int text_length = strlen(text);
     long pos = 0;
     struct Token *tokens = malloc(sizeof(struct Token));
-    tokens->next = NULL;
 
     while (pos + 1 < text_length) {
         while (text[pos] == ' ' || text[pos] == '\t'){
@@ -258,13 +251,8 @@ char *builtin_puts(char *cmd, char **argv) {
 }
 
 int main() {
-    env = malloc(sizeof(struct Env));
-    env->commands = malloc(sizeof(struct Command));
-    env->commands->key = "";
-    env->commands->next = NULL;
-    env->variables = malloc(sizeof(struct Variable));
-    env->variables->key = "";
-    env->variables->next = NULL;
+    commands = malloc(sizeof(struct Command));
+    variables = malloc(sizeof(struct Variable));
 
     set_cmd("if", builtin_if);
     set_cmd("def", builtin_def);

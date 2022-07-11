@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-char types[8][6] = {"IDF", "STR", "VAR", "CMT", "EOL", "BLCK", "EXPR"};
 typedef enum { IDF, STR, VAR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
@@ -27,7 +26,7 @@ struct Command *commands;
 
 struct Variable *variables;
 
-char *interpret(char *text);
+char *eval(char *text);
 
 void add_token(struct Token *token, Type type, char *value) {
     while (token->next) {
@@ -100,7 +99,7 @@ char *del_var(char *key) {
     return "";
 }
 
-char *eval(struct Token *token) {
+char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
     char **args = malloc(1);
     int args_count = 0;
@@ -117,7 +116,7 @@ char *eval(struct Token *token) {
         } else if (token->type == IDF || token->type == STR) {
             args[args_count++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            args[args_count++] = strdup(interpret(token->value));
+            args[args_count++] = strdup(eval(token->value));
         } else if (token->type == BLCK) {
             args[args_count++] = strdup(token->value);
         } else if (token->type == EOL) {
@@ -201,9 +200,9 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-char *interpret(char *text) {
+char *eval(char *text) {
     struct Token *tokens = lexer(text);
-    return eval(tokens);
+    return interpret(tokens);
 }
 
 char *builtin_if(char *cmd, char **argv) {
@@ -212,12 +211,12 @@ char *builtin_if(char *cmd, char **argv) {
             strlen(argv[0]) > 0 &&
             strcmp(argv[0], "false") != 0 &&
             strcmp(argv[0], "0") != 0 ?
-            interpret(argv[1]) : ""
+            eval(argv[1]) : ""
            );
 }
 
 char *builtin_def(char *cmd, char **argv) {
-    //set_cmd(argv[0], interpret); // how to lambda interpret(argv[1])
+    //set_cmd(argv[0], eval); // how to lambda eval(argv[1])
     return "";
 }
 
@@ -271,7 +270,7 @@ char *builtin_puts(char *cmd, char **argv) {
     return "";
 }
 
-int main() {
+void init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
@@ -293,6 +292,10 @@ int main() {
     set_cmd(">", builtin_operators);
     set_cmd("<", builtin_operators);
     set_cmd("=", get_cmd("set"));
+}
+
+int main() {
+    init();
 
     char *text = "                                               \n\
         # Niob is a language for scripting based on TCL and Ruby \n\
@@ -313,7 +316,7 @@ int main() {
         }                                                        \n\
         the_end                                                  \n\
     ";
-    interpret(text);
+    eval(text);
 
     return 0;
 }

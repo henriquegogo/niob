@@ -84,6 +84,22 @@ char *get_var(char *key) {
     return "";
 }
 
+char *del_var(char *key) {
+    struct Variable *variable = variables;
+    while (variable->next) {
+        struct Variable *old_variable = variable;
+        variable = variable->next;
+        if (strcmp(variable->key, key) == 0) {
+            free(variable->key);
+            free(variable->value);
+            old_variable->next = variable->next;
+            free(variable);
+            variable = old_variable;
+        }
+    }
+    return "";
+}
+
 char *eval(struct Token *token) {
     char *cmd_key = malloc(1);
     char **args = malloc(1);
@@ -210,6 +226,11 @@ char *builtin_set(char *cmd, char **argv) {
     return "";
 }
 
+char *builtin_delete(char *cmd, char **argv) {
+    del_var(argv[0]);
+    return "";
+}
+
 char *builtin_math(char *cmd, char **argv) {
     float a = strtof(argv[0], NULL);
     float b = strtof(argv[1], NULL);
@@ -257,6 +278,7 @@ int main() {
     set_cmd("if", builtin_if);
     set_cmd("def", builtin_def);
     set_cmd("set", builtin_set);
+    set_cmd("delete", builtin_delete);
     set_cmd("puts", builtin_puts);
     set_cmd("+", builtin_math);
     set_cmd("-", builtin_math);
@@ -276,8 +298,9 @@ int main() {
         # Niob is a language for scripting based on TCL and Ruby \n\
         set ten 10                                               \n\
         puts (2 * ((12 + $ten) + 56 ))                           \n\
+        delete ten                                               \n\
         message = 'Hello, world!'                                \n\
-        puts $message                                            \n\
+        puts $message $ten                                       \n\
         if false { puts 'Should not print' }                     \n\
         if (2 > 1) {                                             \n\
             puts 'Should print'                                  \n\

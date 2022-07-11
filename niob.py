@@ -7,11 +7,6 @@ class Token():
         self.value: str = token_value
         self.next: Token | None = None
 
-def add_token(token, key: str = '', value: str = ''):
-    while token.next != None:
-        token = token.next
-    token.next = Token(key, value)
-
 class Command():
     def __init__(self, key: str = '', value = None):
         self.key: str = key
@@ -29,22 +24,14 @@ class Env():
         self.commands = Command()
         self.variables = Variable()
 
-        set_cmd(self, 'if', lambda condition, block:
-                interpret(block) if condition != 'false' else 0)
-        set_cmd(self, 'def', lambda key, block:
-                set_cmd(self, key, lambda: interpret(block)))
-        set_cmd(self, 'repeat', self.repeat)
-        set_cmd(self, 'set', lambda key, value: set_var(self, key, value))
-        set_cmd(self, 'sum', lambda a, b: float(a) + float(b))
-        set_cmd(self, 'puts', print)
-        set_cmd(self, '=', get_cmd(self, 'set'))
-        set_cmd(self, '+', get_cmd(self, 'sum'))
-
-    def repeat(self, block):
-        while True: interpret(block)
 env: Env;
 
-def set_cmd(env, key: str, value):
+def add_token(token, key: str = '', value: str = ''):
+    while token.next != None:
+        token = token.next
+    token.next = Token(key, value)
+
+def set_cmd(key: str, value):
     command = env.commands
     while command.next != None:
         command = command.next
@@ -53,13 +40,13 @@ def set_cmd(env, key: str, value):
             return
     command.next = Command(key, value)
 
-def get_cmd(env, key: str):
+def get_cmd(key: str):
     command = env.commands
     while command.next != None:
         command = command.next
         if command.key == key: return command.value
 
-def set_var(env, key: str, value: str):
+def set_var(key: str, value: str):
     variable = env.variables
     while variable.next != None:
         variable = variable.next
@@ -68,7 +55,7 @@ def set_var(env, key: str, value: str):
             return
     variable.next = Variable(key, value)
 
-def get_var(env, key: str):
+def get_var(key: str):
     variable = env.variables
     while variable.next != None:
         variable = variable.next
@@ -83,9 +70,9 @@ def eval(token: Token) -> str:
 
         if token.type == CMT: pass
         elif token.type == VAR:
-            value = get_var(env, token.value)
+            value = get_var(token.value)
             cmd_args.append(value)
-        elif token.type == IDF and get_cmd(env, token.value):
+        elif token.type == IDF and get_cmd(token.value):
             cmd_key = token.value
         elif token.type == IDF or token.type == STR:
             cmd_args.append(token.value)
@@ -96,7 +83,7 @@ def eval(token: Token) -> str:
             cmd_args.append(token.value)
         elif token.type == EOL:
             cmd_return: str = ''
-            cmd = get_cmd(env, cmd_key)
+            cmd = get_cmd(cmd_key)
             if cmd: cmd_return = cmd(*cmd_args)
             cmd_key = ''
             cmd_args = []
@@ -166,6 +153,17 @@ def interpret(text: str):
 def main():
     global env
     env = Env()
+
+    set_cmd('if', lambda condition, block:
+            interpret(block) if condition != 'false' else 0)
+    set_cmd('def', lambda key, block:
+            set_cmd(key, lambda: interpret(block)))
+    #set_cmd('repeat', self.repeat)
+    set_cmd('set', lambda key, value: set_var(key, value))
+    set_cmd('sum', lambda a, b: float(a) + float(b))
+    set_cmd('puts', print)
+    set_cmd('=', get_cmd('set'))
+    set_cmd('+', get_cmd('sum'))
 
     text = """
         # Niob is a language for scripting based on TCL and Ruby

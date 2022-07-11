@@ -11,19 +11,9 @@ struct Token {
     struct Token *next;
 };
 
-void add_token(struct Token *token, Type type, char *value) {
-    while (token->next) {
-        token = token->next;
-    }
-    token->next = malloc(sizeof(struct Token));
-    token->next->type = type;
-    token->next->value = value;
-    token->next->next = NULL;
-}
-
 struct Command {
     char *key;
-    void (*cmd)();
+    char *(*cmd)();
     struct Command *next;
 };
 
@@ -37,9 +27,22 @@ struct Env {
     struct Command *commands;
     struct Variable *variables;
 };
+
 struct Env *env;
 
-void set_cmd(struct Env *env, char *key, void (*cmd)()) {
+char *interpret(char *text);
+
+void add_token(struct Token *token, Type type, char *value) {
+    while (token->next) {
+        token = token->next;
+    }
+    token->next = malloc(sizeof(struct Token));
+    token->next->type = type;
+    token->next->value = value;
+    token->next->next = NULL;
+}
+
+void set_cmd(char *key, char *(*cmd)()) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
@@ -54,7 +57,7 @@ void set_cmd(struct Env *env, char *key, void (*cmd)()) {
     command->next->next = NULL;
 }
 
-void *get_cmd(struct Env *env, char *key) {
+void *get_cmd(char *key) {
     struct Command *command = env->commands;
     while (command->next != NULL) {
         command = command->next;
@@ -63,7 +66,7 @@ void *get_cmd(struct Env *env, char *key) {
     return NULL;
 }
 
-void set_var(struct Env *env, char *key, char *value) {
+void set_var(char *key, char *value) {
     struct Variable *variable = env->variables;
     while (variable->next != NULL) {
         variable = variable->next;
@@ -78,7 +81,7 @@ void set_var(struct Env *env, char *key, char *value) {
     variable->next->next = NULL;
 }
 
-char *get_var(struct Env *env, char *key) {
+char *get_var(char *key) {
     struct Variable *variable = env->variables;
     while (variable->next != NULL) {
         variable = variable->next;
@@ -97,30 +100,22 @@ char *eval(struct Token *token) {
 
         if (token->type == CMT) {
         } else if (token->type == VAR) {
-            char *value = get_var(env, token->value);
-            cmd_args[cmd_args_count] = strdup(value);
-            cmd_args_count += 1;
-        } else if (token->type == IDF && get_cmd(env, token->value)) {
+            char *value = get_var(token->value);
+            cmd_args[cmd_args_count++] = strdup(value);
+        } else if (token->type == IDF && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR) {
-            cmd_args[cmd_args_count] = strdup(token->value);
-            cmd_args_count += 1;
+            cmd_args[cmd_args_count++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            //cmd_args[cmd_args_count] = strdup(interpret(token->value));
-            //cmd_args_count += 1;
+            cmd_args[cmd_args_count++] = strdup(interpret(token->value));
         } else if (token->type == BLCK) {
-            cmd_args[cmd_args_count] = strdup(token->value);
-            cmd_args_count += 1;
+            cmd_args[cmd_args_count++] = strdup(token->value);
         } else if (token->type == EOL) {
             char *cmd_return = malloc(1);
-            void (*cmd)() = get_cmd(env, cmd_key);
-            if (cmd) cmd(cmd_args);
+            char *(*cmd)() = get_cmd(cmd_key);
+            if (cmd) cmd_return = strdup(cmd(cmd_args));
             cmd_key = strdup("");
-            while (cmd_args_count > 0) {
-                cmd_args_count -= 1;
-                cmd_args[cmd_args_count] = strdup("");
-                free(cmd_args[cmd_args_count]);
-            }
+            while (cmd_args_count > 0) cmd_args[--cmd_args_count] = strdup("");
             if (strlen(cmd_return) > 0) return cmd_return;
         }
     }
@@ -196,8 +191,12 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-void print(char **argv) {
-    printf("%s\n", argv[0]);
+char *print(char **argv) {
+    while (*argv) {
+        printf("%s", *argv++);
+        printf(*argv ? " " : "\n");
+    }
+    return "";
 }
 
 char *interpret(char *text) {
@@ -205,8 +204,26 @@ char *interpret(char *text) {
     return eval(tokens);
 }
 
-void set_var_func(char **argv) {
-    set_var(env, argv[0], argv[1]);
+char *if_cmd(char **argv) {
+    return (strcmp(argv[0], "false") != 0) ? interpret(argv[1]) : "";
+}
+
+char *def_cmd(char **argv) {
+    set_cmd(argv[0], interpret); // how to lambda interpret(argv[1])
+    return "";
+}
+
+char *set_var_cmd(char **argv) {
+    set_var(argv[0], argv[1]);
+    return "";
+}
+
+char *sum_cmd(char **argv) {
+    float a = strtof(argv[0], NULL);
+    float b = strtof(argv[1], NULL);
+    char *output = malloc(64);
+    sprintf(output, "%.2f", a + b);
+    return output;
 }
 
 int main() {
@@ -218,9 +235,13 @@ int main() {
     env->variables->key = "";
     env->variables->next = NULL;
 
-    set_cmd(env, "set", set_var_func);
-    set_cmd(env, "puts", print);
-    set_cmd(env, "=", get_cmd(env, "set"));
+    set_cmd("if", if_cmd);
+    set_cmd("def", def_cmd);
+    set_cmd("set", set_var_cmd);
+    set_cmd("sum", sum_cmd);
+    set_cmd("puts", print);
+    set_cmd("=", get_cmd("set"));
+    set_cmd("+", get_cmd("sum"));
 
     char *text = "                                               \n\
         # Niob is a language for scripting based on TCL and Ruby \n\

@@ -135,12 +135,11 @@ char *interpret(struct Token *token) {
             argv[argc++] = value ? strdup(value) : value;
         } else if (token->type == IDF && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
-        } else if (token->type == IDF || token->type == STR) {
+        } else if (token->type == IDF || token->type == STR ||
+                token->type == BLCK) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
             argv[argc++] = strdup(eval(token->value));
-        } else if (token->type == BLCK) {
-            argv[argc++] = strdup(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
             struct Command *command = get_cmd(cmd_key);

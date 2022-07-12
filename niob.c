@@ -80,7 +80,7 @@ char *get_var(char *key) {
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) return variable->value;
     }
-    return "";
+    return NULL;
 }
 
 char *del_var(char *key) {
@@ -110,7 +110,7 @@ char *interpret(struct Token *token) {
         if (token->type == CMT) {
         } else if (token->type == VAR) {
             char *value = get_var(token->value);
-            argv[argc++] = strdup(value);
+            argv[argc++] = value ? strdup(value) : value;
         } else if (token->type == IDF && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR) {
@@ -124,8 +124,8 @@ char *interpret(struct Token *token) {
             char *(*cmd)() = get_cmd(cmd_key);
             if (cmd) output = strdup(cmd(cmd_key, argc, argv));
             else if (argv[0]) output = strdup(argv[0]);
-            cmd_key = strdup("");
-            while (argc > 0) argv[--argc] = strdup("");
+            cmd_key = "";
+            while (argc > 0) argv[--argc] = "";
             if (strlen(output) > 0) return output;
         }
     }

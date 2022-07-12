@@ -102,6 +102,12 @@ char *del_var(char *key) {
     return "";
 }
 
+char *slice(char *text, long start, long end) {
+    char *value = malloc(end - start);
+    strncpy(value, text + start, end - start);
+    return value;
+}
+
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
     char **argv = malloc(1);
@@ -142,12 +148,6 @@ int is_char(char ch) {
     return ch != ' ' && ch != '\t' && \
            ch != ';' && ch != '\n' && \
            ch != ')' && ch != '}';
-}
-
-char *slice(char *text, long start, long end) {
-    char *value = malloc(end - start);
-    strncpy(value, text + start, end - start);
-    return value;
 }
 
 struct Token *lexer(char *text) {
@@ -220,8 +220,7 @@ char *builtin_if(char *cmd, int argc, char **argv) {
         if (strcmp(argv[i], "elseif") == 0) i++;
         if (strlen(argv[i]) > 0 &&
             strcmp(argv[i], "false") != 0 &&
-            strcmp(argv[i], "0") != 0 ||
-            strcmp(argv[i], "else") == 0) {
+            strcmp(argv[i], "0") != 0) {
 
             return eval(argv[i + 1]);
         }
@@ -308,6 +307,7 @@ void init() {
     set_cmd(">", builtin_operators, NULL);
     set_cmd("<", builtin_operators, NULL);
     set_cmd("=", get_cmd("set")->cmd, NULL);
+    set_cmd("?", get_cmd("if")->cmd, NULL);
 }
 
 int main() {
@@ -326,6 +326,7 @@ int main() {
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\
         } elseif (1 == 1) { puts 'Else if' }                     \n\
+        puts (true ? {'It`s ok'} : {'Not ok'})                    \n\
         def the_end {                                            \n\
             puts 'Global var:' $message                          \n\
             puts 'END'                                           \n\

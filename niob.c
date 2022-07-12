@@ -129,7 +129,7 @@ int is_char(char ch) {
 
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
-    char **argv = malloc(1);
+    char **argv = malloc(1024);
     int argc = 0;
 
     while (token->next) {

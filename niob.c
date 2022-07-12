@@ -108,6 +108,19 @@ char *slice(char *text, long start, long end) {
     return value;
 }
 
+char *join(int argc, char **argv) {
+    int charc = 0;
+    for (int i = 0; i < argc; i++) {
+        if (argv[i]) charc += strlen(argv[i]) + 1;
+    }
+    char *output = malloc(charc);
+    for (int i = 0; i < argc; i++) {
+        if (i > 0) strcat(output, " ");
+        if (argv[i]) strcat(output, argv[i]);
+    }
+    return output;
+}
+
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
     char **argv = malloc(1);
@@ -134,7 +147,7 @@ char *interpret(struct Token *token) {
             if (command) {
                 if (command->body) argv[argc++] = command->body;
                 output = strdup(command->cmd(cmd_key, argc, argv));
-            } else if (argv[0]) output = strdup(argv[0]);
+            } else if (argv[0]) output = join(argc, argv);
             cmd_key = "";
             while (argc > 0) argv[--argc] = "";
             if (strlen(output) > 0) return output;
@@ -276,11 +289,8 @@ char *builtin_operators(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_puts(char *cmd, int argc, char **argv) {
-    for (int i = 0; i < argc; i++) {
-        if (i > 0) printf(" ");
-        printf("%s", argv[i]);
-    }
-    printf("\n");
+    char *output = join(argc, argv);
+    printf("%s\n", output);
     return "";
 }
 
@@ -326,7 +336,7 @@ int main() {
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\
         } elseif (1 == 1) { puts 'Else if' }                     \n\
-        puts (true ? {'It`s ok'} : {'Not ok'})                   \n\
+        puts (true ? 'It`s ok' : 'Not ok')                       \n\
         def the_end {                                            \n\
             puts 'Global var:' $message                          \n\
             puts 'END'                                           \n\

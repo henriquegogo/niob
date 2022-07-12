@@ -217,9 +217,11 @@ char *builtin_eval(char *cmd, int argc, char **argv) {
 
 char *builtin_if(char *cmd, int argc, char **argv) {
     for (int i = 0; i < argc; i += 2) {
+        if (strcmp(argv[i], "elseif") == 0) i++;
         if (strlen(argv[i]) > 0 &&
             strcmp(argv[i], "false") != 0 &&
-            strcmp(argv[i], "0") != 0) {
+            strcmp(argv[i], "0") != 0 ||
+            strcmp(argv[i], "else") == 0) {
 
             return eval(argv[i + 1]);
         }
@@ -323,7 +325,7 @@ int main() {
             puts 'Should print'                                  \n\
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\
-        } (1 == 1) { puts 'Else if' }                            \n\
+        } elseif (1 == 1) { puts 'Else if' }                     \n\
         def the_end {                                            \n\
             puts 'Global var:' $message                          \n\
             puts 'END'                                           \n\

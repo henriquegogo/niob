@@ -1,15 +1,3 @@
-# Niob
-Niob Programming Language
-
-## Goals
-- Uniform Function Call Syntax inspiration (function order doesn't matter)
-- Many 'host languages' implementations
-- Easy to learn how to use and extend
-- Flexible
-- Fun
-
-### Example
-```ruby
 # Niob is a language for scripting based on TCL and Ruby
 set ten 10
 puts (2 * ((12 + $ten) + 56 ))
@@ -28,7 +16,3 @@ def the_end {
     puts 'END'
 }
 the_end
-```
-
-## License
-MIT

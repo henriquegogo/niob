@@ -319,30 +319,26 @@ void init() {
     set_cmd("?", get_cmd("if")->cmd, NULL);
 }
 
-int main() {
+int main(int argc, char **argv) {
     init();
 
-    char *text = "                                               \n\
-        # Niob is a language for scripting based on TCL and Ruby \n\
-        set ten 10                                               \n\
-        puts (2 * ((12 + $ten) + 56 ))                           \n\
-        delete ten                                               \n\
-        message = 'Hello, world!'                                \n\
-        puts Message: $ten $message I'm fine.                    \n\
-        if false { puts 'Should not print' } else { puts OK }    \n\
-        if (2 > 1) {                                             \n\
-            puts 'Should print'                                  \n\
-            if true { puts 'Nested printed' }                    \n\
-            if false { puts 'Nested not printed' }               \n\
-        } elseif (1 == 1) { puts 'Else if' }                     \n\
-        puts (true ? 'It`s ok' : 'Not ok')                       \n\
-        def the_end {                                            \n\
-            puts 'Global var:' $message                          \n\
-            puts 'END'                                           \n\
-        }                                                        \n\
-        the_end                                                  \n\
-    ";
-    eval(text);
+    if (argc == 1) {
+        char input[1024];
+        while (1) {
+            printf("niob> ");
+            fgets(input,1024,stdin);
+            eval(input);
+        }
+    } else if (argc == 2) {
+        FILE *file = fopen(argv[1], "r");
+        fseek(file, 0, SEEK_END);
+        long size = ftell(file);
+        rewind(file);
+        char *text = malloc(size);
+        fread(text, size, 1, file);
+        eval(text);
+        fclose(file);
+    }
 
     return 0;
 }

@@ -101,8 +101,8 @@ char *del_var(char *key) {
 
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
-    char **args = malloc(1);
-    int args_count = 0;
+    char **argv = malloc(1);
+    int argc = 0;
 
     while (token->next) {
         token = token->next;
@@ -110,22 +110,22 @@ char *interpret(struct Token *token) {
         if (token->type == CMT) {
         } else if (token->type == VAR) {
             char *value = get_var(token->value);
-            args[args_count++] = strdup(value);
+            argv[argc++] = strdup(value);
         } else if (token->type == IDF && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR) {
-            args[args_count++] = strdup(token->value);
+            argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            args[args_count++] = strdup(eval(token->value));
+            argv[argc++] = strdup(eval(token->value));
         } else if (token->type == BLCK) {
-            args[args_count++] = strdup(token->value);
+            argv[argc++] = strdup(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
             char *(*cmd)() = get_cmd(cmd_key);
-            if (cmd) output = strdup(cmd(cmd_key, args));
-            else if (args[0]) output = strdup(args[0]);
+            if (cmd) output = strdup(cmd(cmd_key, argc, argv));
+            else if (argv[0]) output = strdup(argv[0]);
             cmd_key = strdup("");
-            while (args_count > 0) args[--args_count] = strdup("");
+            while (argc > 0) argv[--argc] = strdup("");
             if (strlen(output) > 0) return output;
         }
     }
@@ -205,12 +205,12 @@ char *eval(char *text) {
     return interpret(tokens);
 }
 
-char *builtin_eval(char *cmd, char **argv) {
+char *builtin_eval(char *cmd, int argc, char **argv) {
     eval(argv[0]);
     return "";;
 }
 
-char *builtin_if(char *cmd, char **argv) {
+char *builtin_if(char *cmd, int argc, char **argv) {
     return (
             strlen(argv[0]) > 0 &&
             strcmp(argv[0], "false") != 0 &&
@@ -219,22 +219,22 @@ char *builtin_if(char *cmd, char **argv) {
            );
 }
 
-char *builtin_def(char *cmd, char **argv) {
+char *builtin_def(char *cmd, int argc, char **argv) {
     set_cmd(argv[0], builtin_eval);
     return "";
 }
 
-char *builtin_set(char *cmd, char **argv) {
+char *builtin_set(char *cmd, int argc, char **argv) {
     set_var(argv[0], argv[1]);
     return "";
 }
 
-char *builtin_delete(char *cmd, char **argv) {
+char *builtin_delete(char *cmd, int argc, char **argv) {
     del_var(argv[0]);
     return "";
 }
 
-char *builtin_math(char *cmd, char **argv) {
+char *builtin_math(char *cmd, int argc, char **argv) {
     float a = strtof(argv[0], NULL);
     float b = strtof(argv[1], NULL);
     char *output = malloc(64);
@@ -247,7 +247,7 @@ char *builtin_math(char *cmd, char **argv) {
     return output;
 }
 
-char *builtin_operators(char *cmd, char **argv) {
+char *builtin_operators(char *cmd, int argc, char **argv) {
     int is_equal = strcmp(argv[0], argv[1]) == 0;
     int a_is_true = strcmp(argv[0], "true") == 0;
     int b_is_true = strcmp(argv[1], "true") == 0;
@@ -266,8 +266,8 @@ char *builtin_operators(char *cmd, char **argv) {
            );
 }
 
-char *builtin_puts(char *cmd, char **argv) {
-    for (int i = 0; argv[i]; i++) {
+char *builtin_puts(char *cmd, int argc, char **argv) {
+    for (int i = 0; i < argc; i++) {
         if (i > 0) printf(" ");
         printf("%s", argv[i]);
     }
@@ -309,7 +309,7 @@ int main() {
         puts (2 * ((12 + $ten) + 56 ))                           \n\
         delete ten                                               \n\
         message = 'Hello, world!'                                \n\
-        puts $ten $message I'm fine.                             \n\
+        puts Message: $ten $message I'm fine.                    \n\
         if false { puts 'Should not print' }                     \n\
         if (2 > 1) {                                             \n\
             puts 'Should print'                                  \n\

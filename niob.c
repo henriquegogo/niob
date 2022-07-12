@@ -13,6 +13,7 @@ struct Token {
 struct Command {
     char *key;
     char *(*cmd)();
+    char *body;
     struct Command *next;
 };
 
@@ -37,25 +38,27 @@ void add_token(struct Token *token, Type type, char *value) {
     token->next->value = value;
 }
 
-void set_cmd(char *key, char *(*cmd)()) {
+void set_cmd(char *key, char *(*cmd)(), char *body) {
     struct Command *command = commands;
     while (command->next) {
         command = command->next;
         if (strcmp(command->key, key) == 0) {
             command->cmd = cmd;
+            command->body = body;
             return;
         }
     }
     command->next = malloc(sizeof(struct Command));
     command->next->key = key;
     command->next->cmd = cmd;
+    command->next->body = body;
 }
 
-void *get_cmd(char *key) {
+struct Command *get_cmd(char *key) {
     struct Command *command = commands;
     while (command->next) {
         command = command->next;
-        if (strcmp(command->key, key) == 0) return command->cmd;
+        if (strcmp(command->key, key) == 0) return command;
     }
     return NULL;
 }
@@ -121,9 +124,11 @@ char *interpret(struct Token *token) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
-            char *(*cmd)() = get_cmd(cmd_key);
-            if (cmd) output = strdup(cmd(cmd_key, argc, argv));
-            else if (argv[0]) output = strdup(argv[0]);
+            struct Command *command = get_cmd(cmd_key);
+            if (command) {
+                if (command->body) argv[argc++] = command->body;
+                output = strdup(command->cmd(cmd_key, argc, argv));
+            } else if (argv[0]) output = strdup(argv[0]);
             cmd_key = "";
             while (argc > 0) argv[--argc] = "";
             if (strlen(output) > 0) return output;
@@ -220,7 +225,7 @@ char *builtin_if(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    set_cmd(argv[0], builtin_eval);
+    set_cmd(argv[0], builtin_eval, argv[1]);
     return "";
 }
 
@@ -279,25 +284,25 @@ void init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    set_cmd("eval", builtin_eval);
-    set_cmd("if", builtin_if);
-    set_cmd("def", builtin_def);
-    set_cmd("set", builtin_set);
-    set_cmd("delete", builtin_delete);
-    set_cmd("puts", builtin_puts);
-    set_cmd("+", builtin_math);
-    set_cmd("-", builtin_math);
-    set_cmd("*", builtin_math);
-    set_cmd("/", builtin_math);
-    set_cmd("&&", builtin_operators);
-    set_cmd("||", builtin_operators);
-    set_cmd("==", builtin_operators);
-    set_cmd("!=", builtin_operators);
-    set_cmd(">=", builtin_operators);
-    set_cmd("<=", builtin_operators);
-    set_cmd(">", builtin_operators);
-    set_cmd("<", builtin_operators);
-    set_cmd("=", get_cmd("set"));
+    set_cmd("eval", builtin_eval, NULL);
+    set_cmd("if", builtin_if, NULL);
+    set_cmd("def", builtin_def, NULL);
+    set_cmd("set", builtin_set, NULL);
+    set_cmd("delete", builtin_delete, NULL);
+    set_cmd("puts", builtin_puts, NULL);
+    set_cmd("+", builtin_math, NULL);
+    set_cmd("-", builtin_math, NULL);
+    set_cmd("*", builtin_math, NULL);
+    set_cmd("/", builtin_math, NULL);
+    set_cmd("&&", builtin_operators, NULL);
+    set_cmd("||", builtin_operators, NULL);
+    set_cmd("==", builtin_operators, NULL);
+    set_cmd("!=", builtin_operators, NULL);
+    set_cmd(">=", builtin_operators, NULL);
+    set_cmd("<=", builtin_operators, NULL);
+    set_cmd(">", builtin_operators, NULL);
+    set_cmd("<", builtin_operators, NULL);
+    set_cmd("=", get_cmd("set")->cmd, NULL);
 }
 
 int main() {

@@ -225,7 +225,7 @@ char *builtin_if(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    set_cmd(argv[0], builtin_eval, argv[1]);
+    set_cmd(argv[0], builtin_eval, argv[argc - 1]);
     return "";
 }
 

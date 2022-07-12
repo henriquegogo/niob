@@ -12,7 +12,12 @@ debug:
 run:
 	./$(BINNAME)
 
+script:
+	./$(BINNAME) script.nio
+
 clean:
 	rm $(BINNAME)
 
-test: all run clean
+test: all script clean
+
+prompt: all run clean

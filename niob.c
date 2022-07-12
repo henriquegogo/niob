@@ -216,12 +216,15 @@ char *builtin_eval(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_if(char *cmd, int argc, char **argv) {
-    return (
-            strlen(argv[0]) > 0 &&
-            strcmp(argv[0], "false") != 0 &&
-            strcmp(argv[0], "0") != 0 ?
-            eval(argv[1]) : ""
-           );
+    for (int i = 0; i < argc; i += 2) {
+        if (strlen(argv[i]) > 0 &&
+            strcmp(argv[i], "false") != 0 &&
+            strcmp(argv[i], "0") != 0) {
+
+            return eval(argv[i + 1]);
+        }
+    }
+    return "";
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
@@ -315,12 +318,12 @@ int main() {
         delete ten                                               \n\
         message = 'Hello, world!'                                \n\
         puts Message: $ten $message I'm fine.                    \n\
-        if false { puts 'Should not print' }                     \n\
+        if false { puts 'Should not print' } else { puts OK }    \n\
         if (2 > 1) {                                             \n\
             puts 'Should print'                                  \n\
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\
-        }                                                        \n\
+        } (1 == 1) { puts 'Else if' }                            \n\
         def the_end {                                            \n\
             puts 'Global var:' $message                          \n\
             puts 'END'                                           \n\

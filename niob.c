@@ -326,7 +326,7 @@ int main() {
             if true { puts 'Nested printed' }                    \n\
             if false { puts 'Nested not printed' }               \n\
         } elseif (1 == 1) { puts 'Else if' }                     \n\
-        puts (true ? {'It`s ok'} : {'Not ok'})                    \n\
+        puts (true ? {'It`s ok'} : {'Not ok'})                   \n\
         def the_end {                                            \n\
             puts 'Global var:' $message                          \n\
             puts 'END'                                           \n\

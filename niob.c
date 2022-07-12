@@ -121,6 +121,12 @@ char *join(int argc, char **argv) {
     return output;
 }
 
+int is_char(char ch) {
+    return ch != ' ' && ch != '\t' && \
+           ch != ';' && ch != '\n' && \
+           ch != ')' && ch != '}';
+}
+
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
     char **argv = malloc(1);
@@ -154,12 +160,6 @@ char *interpret(struct Token *token) {
     }
 
     return "";
-}
-
-int is_char(char ch) {
-    return ch != ' ' && ch != '\t' && \
-           ch != ';' && ch != '\n' && \
-           ch != ')' && ch != '}';
 }
 
 struct Token *lexer(char *text) {
@@ -223,7 +223,7 @@ char *eval(char *text) {
 }
 
 char *builtin_eval(char *cmd, int argc, char **argv) {
-    eval(argv[0]);
+    eval(argv[argc - 1]);
     return "";;
 }
 

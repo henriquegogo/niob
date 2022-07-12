@@ -324,8 +324,9 @@ int main(int argc, char **argv) {
 
     if (argc == 1) {
         char input[1024];
-        while (1) {
+        while (strcmp(input, "exit\n") != 0) {
             printf("niob> ");
+            fflush(stdout);
             fgets(input,1024,stdin);
             eval(input);
         }

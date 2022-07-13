@@ -245,7 +245,8 @@ char *builtin_def(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_set(char *cmd, int argc, char **argv) {
-    set_var(argv[0], argv[1]);
+    char *value = argv[2] ? join(argc, argv) + strlen(argv[0]) + 1 : argv[1];
+    set_var(argv[0], value);
     return "";
 }
 

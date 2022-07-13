@@ -95,7 +95,6 @@ char *del_var(char *key) {
             free(variable->key);
             free(variable->value);
             old_variable->next = variable->next;
-            free(variable);
             variable = old_variable;
         }
     }
@@ -223,19 +222,19 @@ char *eval(char *text) {
 }
 
 char *builtin_eval(char *cmd, int argc, char **argv) {
-    eval(argv[argc - 1]);
+    char *input = join(argc, argv);
+    eval(input);
     return "";;
 }
 
 char *builtin_if(char *cmd, int argc, char **argv) {
-    for (int i = 0; i < argc; i += 2) {
+    for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "elseif") == 0) i++;
         if (strlen(argv[i]) > 0 &&
             strcmp(argv[i], "false") != 0 &&
             strcmp(argv[i], "0") != 0) {
-
-            return eval(argv[i + 1]);
-        }
+            return eval(argv[++i]);
+        } else i++;
     }
     return "";
 }

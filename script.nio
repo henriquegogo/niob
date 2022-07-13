@@ -28,5 +28,5 @@ def say_my_name {             # Define functions
 }
 
 # Function call parameters will be text prepended to defined body
-say_my_name (name = 'me')
+say_my_name { name = 'me' }   # Blocks are considered one single argument.
 puts $name                    # Any variable is global

@@ -8,7 +8,20 @@ Niob Programming Language
 - Flexible
 - Fun
 
-### Example
+## Built-in commands
+### Actions
+- return
+- if ?
+- set =
+- def
+- delete
+- puts
+
+### Operators
+- + - * /
+- && || == != >= <= > <
+
+## Example
 ```ruby
 # Niob is a language for scripting based on TCL and Ruby
 

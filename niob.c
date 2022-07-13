@@ -223,8 +223,7 @@ char *eval(char *text) {
 
 char *builtin_eval(char *cmd, int argc, char **argv) {
     char *input = join(argc, argv);
-    eval(input);
-    return "";;
+    return eval(input);
 }
 
 char *builtin_if(char *cmd, int argc, char **argv) {
@@ -297,10 +296,12 @@ void init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    set_cmd("eval", builtin_eval, NULL);
+    set_cmd("return", builtin_eval, NULL);
     set_cmd("if", builtin_if, NULL);
+    set_cmd("?", builtin_if, NULL);
     set_cmd("def", builtin_def, NULL);
     set_cmd("set", builtin_set, NULL);
+    set_cmd("=", builtin_set, NULL);
     set_cmd("delete", builtin_delete, NULL);
     set_cmd("puts", builtin_puts, NULL);
     set_cmd("+", builtin_math, NULL);
@@ -315,8 +316,6 @@ void init() {
     set_cmd("<=", builtin_operators, NULL);
     set_cmd(">", builtin_operators, NULL);
     set_cmd("<", builtin_operators, NULL);
-    set_cmd("=", get_cmd("set")->cmd, NULL);
-    set_cmd("?", get_cmd("if")->cmd, NULL);
 }
 
 int main(int argc, char **argv) {

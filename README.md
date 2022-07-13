@@ -10,16 +10,18 @@ Niob Programming Language
 
 ## Built-in commands
 ### Actions
-- return
-- if ?
-- set =
+- if (alternative: ?)
+- set (alternative: =)
+- return (alternative: sentence without command)
 - def
 - delete
 - puts
 
 ### Operators
-- + - * /
-- && || == != >= <= > <
+```
++ - * /
+&& || == != >= <= > <
+```
 
 ## Example
 ```ruby

@@ -59,7 +59,7 @@ def say_my_name {             # Define functions
 say_my_name { name = 'me' }   # Blocks are considered one single argument.
 puts $name                    # Any variable is global
 
-# Loop function is similar to "while true". Use return to stop
+# While will evaluate first argument everytime. Use block {} instead of expression ()
 count = 1.00
 while {$count <= 20} {        # Block {} is single argument revaluated everytime
   puts $count

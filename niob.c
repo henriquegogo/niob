@@ -219,7 +219,7 @@ struct Token *lexer(char *text) {
 }
 
 // Default built-in functions
-char *builtin_niob_eval(char *cmd, int argc, char **argv) {
+char *builtin_eval(char *cmd, int argc, char **argv) {
     char *input = join(argc, argv);
     return niob_eval(input);
 }
@@ -242,7 +242,7 @@ char *builtin_while(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    niob_def(argv[0], builtin_niob_eval, argv[argc - 1]);
+    niob_def(argv[0], builtin_eval, argv[argc - 1]);
     return "";
 }
 
@@ -300,7 +300,7 @@ void niob_init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    niob_def("return", builtin_niob_eval, NULL);
+    niob_def("return", builtin_eval, NULL);
     niob_def("if", builtin_if, NULL);
     niob_def("?", builtin_if, NULL);
     niob_def("while", builtin_while, NULL);

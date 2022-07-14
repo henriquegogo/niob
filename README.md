@@ -3,10 +3,8 @@ Niob Programming Language
 
 ## Goals
 - Uniform Function Call Syntax inspiration (function order doesn't matter)
-- Many 'host languages' implementations
 - Easy to learn how to use and extend
 - Flexible
-- Fun
 
 ## Built-in commands
 ### Actions

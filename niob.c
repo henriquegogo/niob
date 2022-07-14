@@ -233,7 +233,7 @@ char *builtin_eval(char *cmd, int argc, char **argv) {
 char *builtin_if(char *cmd, int argc, char **argv) {
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "elseif") == 0) i++;
-        if (strlen(argv[i]) > 0 && strcmp(argv[i], "true") == 0) {
+        if (strlen(argv[i]) > 0 && strcmp(argv[i], "false") != 0) {
             return eval(argv[++i]);
         } else i++;
     }
@@ -241,7 +241,7 @@ char *builtin_if(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_while(char *cmd, int argc, char **argv) {
-    while (strcmp(eval(argv[0]), "true") == 0) {
+    while (strcmp(eval(argv[0]), "false") != 0) {
         if (strlen(eval(argv[1])) > 0) break;
     }
     return "";
@@ -278,8 +278,8 @@ char *builtin_math(char *cmd, int argc, char **argv) {
 
 char *builtin_operators(char *cmd, int argc, char **argv) {
     int is_equal = strcmp(argv[0], argv[1]) == 0;
-    int a_is_true = strcmp(argv[0], "true") == 0;
-    int b_is_true = strcmp(argv[1], "true") == 0;
+    int a_is_true = strcmp(argv[0], "false") != 0;
+    int b_is_true = strcmp(argv[1], "false") != 0;
     float a = strtof(argv[0], NULL);
     float b = strtof(argv[1], NULL);
     return (

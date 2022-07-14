@@ -59,12 +59,12 @@ def say_my_name {             # Define functions
 say_my_name { name = 'me' }   # Blocks are considered one single argument.
 puts $name                    # Any variable is global
 
-# While will evaluate first argument everytime. Use block {} instead of expression ()
 count = 1.00
+# First argument will be evaluated everytime. Use block {} instead of ()
 while {$count <= 20} {        # Block {} is single argument revaluated everytime
-  puts $count
-  count = ($count + 1)        # Expressions () runs imediatly
-  ($count > 10) ? break       # You can break loop using anything that returns
+    puts $count
+    count = ($count + 1)      # Expressions () runs imediatly
+    ($count > 10) ? break     # You can break loop using anything that returns
 }
 ```
 

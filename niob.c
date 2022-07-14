@@ -141,7 +141,7 @@ char *interpret(struct Token *token) {
         } else if (token->type == VAR) {
             char *value = get_var(token->value);
             argv[argc++] = value ? strdup(value) : value;
-        } else if (token->type == IDF && get_cmd(token->value)) {
+        } else if (token->type == IDF && !cmd_key[0] && get_cmd(token->value)) {
             cmd_key = strdup(token->value);
         } else if (token->type == IDF || token->type == STR ||
                 token->type == BLCK) {

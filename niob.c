@@ -29,6 +29,7 @@ struct Variable *variables;
 
 char *eval(char *text);
 
+// Struct methods
 void add_token(struct Token *token, Type type, char *value) {
     while (token->next) {
         token = token->next;
@@ -101,6 +102,7 @@ char *del_var(char *key) {
     return "";
 }
 
+// Helpers
 char *slice(char *text, long start, long end) {
     char *value = malloc(end - start);
     strncpy(value, text + start, end - start);
@@ -126,6 +128,7 @@ int is_char(char ch) {
            ch != ')' && ch != '}';
 }
 
+// Parser
 char *interpret(struct Token *token) {
     char *cmd_key = malloc(1);
     char **argv = malloc(1024);
@@ -221,6 +224,7 @@ char *eval(char *text) {
     return interpret(tokens);
 }
 
+// Default built-in functions
 char *builtin_eval(char *cmd, int argc, char **argv) {
     char *input = join(argc, argv);
     return eval(input);
@@ -229,11 +233,16 @@ char *builtin_eval(char *cmd, int argc, char **argv) {
 char *builtin_if(char *cmd, int argc, char **argv) {
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "elseif") == 0) i++;
-        if (strlen(argv[i]) > 0 &&
-            strcmp(argv[i], "false") != 0 &&
-            strcmp(argv[i], "0") != 0) {
+        if (strlen(argv[i]) > 0 && strcmp(argv[i], "true") == 0) {
             return eval(argv[++i]);
         } else i++;
+    }
+    return "";
+}
+
+char *builtin_while(char *cmd, int argc, char **argv) {
+    while (strcmp(eval(argv[0]), "true") == 0) {
+        if (strlen(eval(argv[1])) > 0) break;
     }
     return "";
 }
@@ -299,6 +308,7 @@ void init() {
     set_cmd("return", builtin_eval, NULL);
     set_cmd("if", builtin_if, NULL);
     set_cmd("?", builtin_if, NULL);
+    set_cmd("while", builtin_while, NULL);
     set_cmd("def", builtin_def, NULL);
     set_cmd("set", builtin_set, NULL);
     set_cmd("=", builtin_set, NULL);

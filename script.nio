@@ -30,3 +30,11 @@ def say_my_name {             # Define functions
 # Function call parameters will be text prepended to defined body
 say_my_name { name = 'me' }   # Blocks are considered one single argument.
 puts $name                    # Any variable is global
+
+# Loop function is similar to "while true". Use return to stop
+count = 1.00
+while {$count <= 20} {        # Block {} is single argument revaluated everytime
+  puts $count
+  count = ($count + 1)        # Expressions () runs imediatly
+  ($count > 10) ? break       # You can break loop using anything that returns
+}

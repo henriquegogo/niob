@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "niob.h"
+
 typedef enum { IDF, STR, VAR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
@@ -26,8 +28,6 @@ struct Variable {
 struct Command *commands;
 
 struct Variable *variables;
-
-char *eval(char *text);
 
 // Struct methods
 void add_token(struct Token *token, Type type, char *value) {
@@ -147,7 +147,7 @@ char *interpret(struct Token *token) {
                 token->type == BLCK) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            argv[argc++] = strdup(eval(token->value));
+            argv[argc++] = strdup(niob_eval(token->value));
         } else if (token->type == EOL) {
             char *output = malloc(1);
             struct Command *command = get_cmd(cmd_key);
@@ -219,36 +219,31 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-char *eval(char *text) {
-    struct Token *tokens = lexer(text);
-    return interpret(tokens);
-}
-
 // Default built-in functions
-char *builtin_eval(char *cmd, int argc, char **argv) {
+char *builtin_niob_eval(char *cmd, int argc, char **argv) {
     char *input = join(argc, argv);
-    return eval(input);
+    return niob_eval(input);
 }
 
 char *builtin_if(char *cmd, int argc, char **argv) {
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "elseif") == 0) i++;
         if (strlen(argv[i]) > 0 && strcmp(argv[i], "false") != 0) {
-            return eval(argv[++i]);
+            return niob_eval(argv[++i]);
         } else i++;
     }
     return "";
 }
 
 char *builtin_while(char *cmd, int argc, char **argv) {
-    while (strcmp(eval(argv[0]), "false") != 0) {
-        if (strlen(eval(argv[1])) > 0) break;
+    while (strcmp(niob_eval(argv[0]), "false") != 0) {
+        if (strlen(niob_eval(argv[1])) > 0) break;
     }
     return "";
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    set_cmd(argv[0], builtin_eval, argv[argc - 1]);
+    set_cmd(argv[0], builtin_niob_eval, argv[argc - 1]);
     return "";
 }
 
@@ -301,11 +296,12 @@ char *builtin_puts(char *cmd, int argc, char **argv) {
     return "";
 }
 
-void init() {
+// Public functions
+void niob_init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    set_cmd("return", builtin_eval, NULL);
+    set_cmd("return", builtin_niob_eval, NULL);
     set_cmd("if", builtin_if, NULL);
     set_cmd("?", builtin_if, NULL);
     set_cmd("while", builtin_while, NULL);
@@ -328,27 +324,23 @@ void init() {
     set_cmd("<", builtin_operators, NULL);
 }
 
-int main(int argc, char **argv) {
-    init();
+char *niob_eval(char *text) {
+    struct Token *tokens = lexer(text);
+    return interpret(tokens);
+}
 
-    if (argc == 1) {
-        char input[1024];
-        while (strcmp(input, "exit\n") != 0) {
-            printf("niob> ");
-            fflush(stdout);
-            fgets(input,1024,stdin);
-            eval(input);
-        }
-    } else if (argc == 2) {
-        FILE *file = fopen(argv[1], "r");
-        fseek(file, 0, SEEK_END);
-        long size = ftell(file);
-        rewind(file);
-        char *text = malloc(size);
-        fread(text, size, 1, file);
-        eval(text);
-        fclose(file);
-    }
+void niob_def(char *key, char *(*cmd)(), char *body) {
+    set_cmd(key, cmd, body);
+}
 
-    return 0;
+void niob_set(char *key, char *value) {
+    set_var(key, value);
+}
+
+char *niob_get(char *key) {
+    return get_var(key);
+}
+
+void niob_del(char *key) {
+    del_var(key);
 }

@@ -39,7 +39,7 @@ void add_token(struct Token *token, Type type, char *value) {
     token->next->value = value;
 }
 
-void set_cmd(char *key, char *(*cmd)(), char *body) {
+void niob_def(char *key, char *(*cmd)(), char *body) {
     struct Command *command = commands;
     while (command->next) {
         command = command->next;
@@ -55,7 +55,7 @@ void set_cmd(char *key, char *(*cmd)(), char *body) {
     command->next->body = body;
 }
 
-struct Command *get_cmd(char *key) {
+struct Command *niob_cmd(char *key) {
     struct Command *command = commands;
     while (command->next) {
         command = command->next;
@@ -64,7 +64,7 @@ struct Command *get_cmd(char *key) {
     return NULL;
 }
 
-void set_var(char *key, char *value) {
+void niob_set(char *key, char *value) {
     struct Variable *variable = variables;
     while (variable->next) {
         variable = variable->next;
@@ -78,7 +78,7 @@ void set_var(char *key, char *value) {
     variable->next->value = value;
 }
 
-char *get_var(char *key) {
+char *niob_get(char *key) {
     struct Variable *variable = variables;
     while (variable->next) {
         variable = variable->next;
@@ -87,7 +87,7 @@ char *get_var(char *key) {
     return NULL;
 }
 
-char *del_var(char *key) {
+void niob_del(char *key) {
     struct Variable *variable = variables;
     while (variable->next) {
         struct Variable *old_variable = variable;
@@ -99,7 +99,6 @@ char *del_var(char *key) {
             variable = old_variable;
         }
     }
-    return "";
 }
 
 // Helpers
@@ -130,7 +129,7 @@ int is_char(char ch) {
 
 // Parser
 char *interpret(struct Token *token) {
-    char *cmd_key = malloc(1);
+    char *cmd = malloc(1);
     char **argv = malloc(1024);
     int argc = 0;
 
@@ -139,10 +138,10 @@ char *interpret(struct Token *token) {
 
         if (token->type == CMT) {
         } else if (token->type == VAR) {
-            char *value = get_var(token->value);
+            char *value = niob_get(token->value);
             argv[argc++] = value ? strdup(value) : value;
-        } else if (token->type == IDF && !cmd_key[0] && get_cmd(token->value)) {
-            cmd_key = strdup(token->value);
+        } else if (token->type == IDF && !cmd[0] && niob_cmd(token->value)) {
+            cmd = strdup(token->value);
         } else if (token->type == IDF || token->type == STR ||
                 token->type == BLCK) {
             argv[argc++] = strdup(token->value);
@@ -150,12 +149,12 @@ char *interpret(struct Token *token) {
             argv[argc++] = strdup(niob_eval(token->value));
         } else if (token->type == EOL) {
             char *output = malloc(1);
-            struct Command *command = get_cmd(cmd_key);
+            struct Command *command = niob_cmd(cmd);
             if (command) {
                 if (command->body) argv[argc++] = command->body;
-                output = strdup(command->cmd(cmd_key, argc, argv));
+                output = strdup(command->cmd(cmd, argc, argv));
             } else if (argv[0]) output = join(argc, argv);
-            cmd_key = "";
+            cmd = "";
             while (argc > 0) argv[--argc] = "";
             if (strlen(output) > 0) return output;
         }
@@ -243,18 +242,18 @@ char *builtin_while(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    set_cmd(argv[0], builtin_niob_eval, argv[argc - 1]);
+    niob_def(argv[0], builtin_niob_eval, argv[argc - 1]);
     return "";
 }
 
 char *builtin_set(char *cmd, int argc, char **argv) {
     char *value = argv[2] ? join(argc, argv) + strlen(argv[0]) + 1 : argv[1];
-    set_var(argv[0], value);
+    niob_set(argv[0], value);
     return "";
 }
 
 char *builtin_delete(char *cmd, int argc, char **argv) {
-    del_var(argv[0]);
+    niob_del(argv[0]);
     return "";
 }
 
@@ -301,46 +300,30 @@ void niob_init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    set_cmd("return", builtin_niob_eval, NULL);
-    set_cmd("if", builtin_if, NULL);
-    set_cmd("?", builtin_if, NULL);
-    set_cmd("while", builtin_while, NULL);
-    set_cmd("def", builtin_def, NULL);
-    set_cmd("set", builtin_set, NULL);
-    set_cmd("=", builtin_set, NULL);
-    set_cmd("delete", builtin_delete, NULL);
-    set_cmd("puts", builtin_puts, NULL);
-    set_cmd("+", builtin_math, NULL);
-    set_cmd("-", builtin_math, NULL);
-    set_cmd("*", builtin_math, NULL);
-    set_cmd("/", builtin_math, NULL);
-    set_cmd("&&", builtin_operators, NULL);
-    set_cmd("||", builtin_operators, NULL);
-    set_cmd("==", builtin_operators, NULL);
-    set_cmd("!=", builtin_operators, NULL);
-    set_cmd(">=", builtin_operators, NULL);
-    set_cmd("<=", builtin_operators, NULL);
-    set_cmd(">", builtin_operators, NULL);
-    set_cmd("<", builtin_operators, NULL);
+    niob_def("return", builtin_niob_eval, NULL);
+    niob_def("if", builtin_if, NULL);
+    niob_def("?", builtin_if, NULL);
+    niob_def("while", builtin_while, NULL);
+    niob_def("def", builtin_def, NULL);
+    niob_def("set", builtin_set, NULL);
+    niob_def("=", builtin_set, NULL);
+    niob_def("delete", builtin_delete, NULL);
+    niob_def("puts", builtin_puts, NULL);
+    niob_def("+", builtin_math, NULL);
+    niob_def("-", builtin_math, NULL);
+    niob_def("*", builtin_math, NULL);
+    niob_def("/", builtin_math, NULL);
+    niob_def("&&", builtin_operators, NULL);
+    niob_def("||", builtin_operators, NULL);
+    niob_def("==", builtin_operators, NULL);
+    niob_def("!=", builtin_operators, NULL);
+    niob_def(">=", builtin_operators, NULL);
+    niob_def("<=", builtin_operators, NULL);
+    niob_def(">", builtin_operators, NULL);
+    niob_def("<", builtin_operators, NULL);
 }
 
 char *niob_eval(char *text) {
     struct Token *tokens = lexer(text);
     return interpret(tokens);
-}
-
-void niob_def(char *key, char *(*cmd)(), char *body) {
-    set_cmd(key, cmd, body);
-}
-
-void niob_set(char *key, char *value) {
-    set_var(key, value);
-}
-
-char *niob_get(char *key) {
-    return get_var(key);
-}
-
-void niob_del(char *key) {
-    del_var(key);
 }

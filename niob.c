@@ -29,7 +29,7 @@ struct Command *commands;
 
 struct Variable *variables;
 
-// Struct methods
+// Struct functions (some of them are public and listed in the end of file)
 void add_token(struct Token *token, Type type, char *value) {
     while (token->next) {
         token = token->next;
@@ -39,66 +39,13 @@ void add_token(struct Token *token, Type type, char *value) {
     token->next->value = value;
 }
 
-void niob_def(char *key, char *(*cmd)(), char *body) {
-    struct Command *command = commands;
-    while (command->next) {
-        command = command->next;
-        if (strcmp(command->key, key) == 0) {
-            command->cmd = cmd;
-            command->body = body;
-            return;
-        }
-    }
-    command->next = malloc(sizeof(struct Command));
-    command->next->key = key;
-    command->next->cmd = cmd;
-    command->next->body = body;
-}
-
-struct Command *niob_cmd(char *key) {
+struct Command *get_cmd(char *key) {
     struct Command *command = commands;
     while (command->next) {
         command = command->next;
         if (strcmp(command->key, key) == 0) return command;
     }
     return NULL;
-}
-
-void niob_set(char *key, char *value) {
-    struct Variable *variable = variables;
-    while (variable->next) {
-        variable = variable->next;
-        if (strcmp(variable->key, key) == 0) {
-            variable->value = value;
-            return;
-        }
-    }
-    variable->next = malloc(sizeof(struct Variable));
-    variable->next->key = key;
-    variable->next->value = value;
-}
-
-char *niob_get(char *key) {
-    struct Variable *variable = variables;
-    while (variable->next) {
-        variable = variable->next;
-        if (strcmp(variable->key, key) == 0) return variable->value;
-    }
-    return NULL;
-}
-
-void niob_del(char *key) {
-    struct Variable *variable = variables;
-    while (variable->next) {
-        struct Variable *old_variable = variable;
-        variable = variable->next;
-        if (strcmp(variable->key, key) == 0) {
-            free(variable->key);
-            free(variable->value);
-            old_variable->next = variable->next;
-            variable = old_variable;
-        }
-    }
 }
 
 // Helpers
@@ -108,14 +55,15 @@ char *slice(char *text, long start, long end) {
     return value;
 }
 
-char *join(int argc, char **argv) {
+char *join(int argc, char **argv, char *separator) {
     int charc = 0;
     for (int i = 0; i < argc; i++) {
-        if (argv[i]) charc += strlen(argv[i]) + 1;
+        if (i > 0 && separator[0]) charc += strlen(separator);
+        if (argv[i]) charc += strlen(argv[i]);
     }
     char *output = malloc(charc);
     for (int i = 0; i < argc; i++) {
-        if (i > 0) strcat(output, " ");
+        if (i > 0 && separator) strcat(output, separator);
         if (argv[i]) strcat(output, argv[i]);
     }
     return output;
@@ -127,7 +75,7 @@ int is_char(char ch) {
            ch != ')' && ch != '}';
 }
 
-// Parser
+// Tokenizer and Parser
 char *interpret(struct Token *token) {
     char *cmd = malloc(1);
     char **argv = malloc(1024);
@@ -140,7 +88,7 @@ char *interpret(struct Token *token) {
         } else if (token->type == VAR) {
             char *value = niob_get(token->value);
             argv[argc++] = value ? strdup(value) : value;
-        } else if (token->type == IDF && !cmd[0] && niob_cmd(token->value)) {
+        } else if (token->type == IDF && !cmd[0] && get_cmd(token->value)) {
             cmd = strdup(token->value);
         } else if (token->type == IDF || token->type == STR ||
                 token->type == BLCK) {
@@ -149,11 +97,11 @@ char *interpret(struct Token *token) {
             argv[argc++] = strdup(niob_eval(token->value));
         } else if (token->type == EOL) {
             char *output = malloc(1);
-            struct Command *command = niob_cmd(cmd);
+            struct Command *command = get_cmd(cmd);
             if (command) {
                 if (command->body) argv[argc++] = command->body;
                 output = strdup(command->cmd(cmd, argc, argv));
-            } else if (argv[0]) output = join(argc, argv);
+            } else if (argv[0]) output = join(argc, argv, " ");
             cmd = "";
             while (argc > 0) argv[--argc] = "";
             if (strlen(output) > 0) return output;
@@ -218,9 +166,9 @@ struct Token *lexer(char *text) {
     return tokens;
 }
 
-// Default built-in functions
+// Built-in functions / commands
 char *builtin_eval(char *cmd, int argc, char **argv) {
-    char *input = join(argc, argv);
+    char *input = join(argc, argv, " ");
     return niob_eval(input);
 }
 
@@ -247,7 +195,8 @@ char *builtin_def(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_set(char *cmd, int argc, char **argv) {
-    char *value = argv[2] ? join(argc, argv) + strlen(argv[0]) + 1 : argv[1];
+    char *value = argv[2] ? join(argc, argv, " ") + strlen(argv[0]) + 1 :
+        argv[1];
     niob_set(argv[0], value);
     return "";
 }
@@ -290,12 +239,16 @@ char *builtin_operators(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_puts(char *cmd, int argc, char **argv) {
-    char *output = join(argc, argv);
+    char *output = join(argc, argv, " ");
     printf("%s\n", output);
     return "";
 }
 
-// Public functions
+char *builtin_concat(char *cmd, int argc, char **argv) {
+    return join(argc, argv, "");
+}
+
+// API
 void niob_init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
@@ -309,6 +262,7 @@ void niob_init() {
     niob_def("=", builtin_set, NULL);
     niob_def("delete", builtin_delete, NULL);
     niob_def("puts", builtin_puts, NULL);
+    niob_def("concat", builtin_concat, NULL);
     niob_def("+", builtin_math, NULL);
     niob_def("-", builtin_math, NULL);
     niob_def("*", builtin_math, NULL);
@@ -326,4 +280,57 @@ void niob_init() {
 char *niob_eval(char *text) {
     struct Token *tokens = lexer(text);
     return interpret(tokens);
+}
+
+void niob_def(char *key, char *(*cmd)(), char *body) {
+    struct Command *command = commands;
+    while (command->next) {
+        command = command->next;
+        if (strcmp(command->key, key) == 0) {
+            command->cmd = cmd;
+            command->body = body;
+            return;
+        }
+    }
+    command->next = malloc(sizeof(struct Command));
+    command->next->key = key;
+    command->next->cmd = cmd;
+    command->next->body = body;
+}
+
+void niob_set(char *key, char *value) {
+    struct Variable *variable = variables;
+    while (variable->next) {
+        variable = variable->next;
+        if (strcmp(variable->key, key) == 0) {
+            variable->value = value;
+            return;
+        }
+    }
+    variable->next = malloc(sizeof(struct Variable));
+    variable->next->key = key;
+    variable->next->value = value;
+}
+
+char *niob_get(char *key) {
+    struct Variable *variable = variables;
+    while (variable->next) {
+        variable = variable->next;
+        if (strcmp(variable->key, key) == 0) return variable->value;
+    }
+    return NULL;
+}
+
+void niob_del(char *key) {
+    struct Variable *variable = variables;
+    while (variable->next) {
+        struct Variable *old_variable = variable;
+        variable = variable->next;
+        if (strcmp(variable->key, key) == 0) {
+            free(variable->key);
+            free(variable->value);
+            old_variable->next = variable->next;
+            variable = old_variable;
+        }
+    }
 }

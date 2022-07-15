@@ -15,6 +15,7 @@ Niob Programming Language
 - def
 - delete
 - puts
+- concat
 
 ### Operators
 ```
@@ -40,7 +41,7 @@ if false {                    # Blocks are considered one argument "{*}".
     puts 'fake'
 } elseif (2 == 2) {           # The "elseif" and "else" are arguments of "if"
     puts 'two is two'         # that need to be in the same sentence, so
-    puts 'and how are you?'   # avoid to declare in a new line. Use after "{}".
+    puts (concat 2 2)         # avoid to declare in a new line. Use after "{}".
 
     # Symbols "?", ":" are alias for "if", "else".
     # And order doesn't matter, remember?
@@ -65,6 +66,13 @@ while {$count <= 20} {        # Block {} is single argument revaluated everytime
     ($count > 10) ? break     # You can break loop using anything that returns
 }
 ```
+
+## Known issues / TODO
+- String to number parsing in math
+- Comment with unpaired "}" char
+- Scoped variables
+- Arrays
+- Objects
 
 ## License
 MIT

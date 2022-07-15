@@ -13,7 +13,7 @@ Niob Programming Language
 - return (alternative: sentence without command)
 - while
 - def
-- delete
+- del
 - puts
 - concat
 
@@ -35,7 +35,7 @@ puts $message                 # Variable reference.
 puts (2 * (20 + $ten))        # Multiple sentences can be called with "( )".
 puts (+ 2 2)                  # Operators are commands too.
 
-delete ten                    # Manage memory manually.
+del ten                       # Manage memory manually.
 
 if false {                    # Blocks are considered one argument "{*}".
     puts 'fake'

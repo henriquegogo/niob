@@ -69,10 +69,15 @@ char *join(int argc, char **argv, char *separator) {
     return output;
 }
 
+char *itostr(int number) {
+    char *output = malloc(sizeof(int));
+    sprintf(output, "%d", number);
+    return output;
+}
+
 int is_char(char ch) {
-    return ch != ' ' && ch != '\t' && \
-           ch != ';' && ch != '\n' && \
-           ch != ')' && ch != '}';
+    return ch != ' ' && ch != '\t' && ch != '\n' && ch != ';' && \
+           ch != '(' && ch != ')' && ch != '{' && ch != '}';
 }
 
 // Tokenizer and Parser
@@ -94,7 +99,7 @@ char *interpret(struct Token *token) {
                 token->type == BLCK) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
-            argv[argc++] = strdup(niob_eval(token->value));
+            argv[argc++] = niob_eval(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
             struct Command *command = get_cmd(cmd);
@@ -125,7 +130,7 @@ struct Token *lexer(char *text) {
         if (text[pos] == '\n' || text[pos] == ';') {
             pos += 1;
             add_token(tokens, EOL, NULL);
-        } else if (text[pos] == '$') {
+        } else if (text[pos] == '$' && is_char(text[pos + 1])) {
             pos += 1;
             int init_pos = pos;
             while (pos < text_length && is_char(text[pos])) pos += 1;
@@ -167,7 +172,7 @@ struct Token *lexer(char *text) {
 }
 
 // Built-in functions / commands
-char *builtin_eval(char *cmd, int argc, char **argv) {
+char *buitin_return(char *cmd, int argc, char **argv) {
     char *input = join(argc, argv, " ");
     return niob_eval(input);
 }
@@ -190,7 +195,7 @@ char *builtin_while(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_def(char *cmd, int argc, char **argv) {
-    niob_def(argv[0], builtin_eval, argv[argc - 1]);
+    niob_def(argv[0], buitin_return, argv[argc - 1]);
     return "";
 }
 
@@ -250,9 +255,36 @@ char *builtin_concat(char *cmd, int argc, char **argv) {
 
 char *builtin_len(char *cmd, int argc, char **argv) {
     int length = strlen(join(argc, argv, " "));
-    char *output = malloc(length);
-    sprintf(output, "%d", length);
-    return output;
+    return itostr(length);
+}
+
+char *builtin_append(char *cmd, int argc, char **argv) {
+    char *key_size = strcat(strdup(argv[0]), ".size");
+    int i = niob_get(key_size) ? atoi(niob_get(key_size)) : 0;
+    char **key = malloc(1024);
+    key[0] = strdup(argv[0]);
+    key[1] = strdup("[");
+    key[2] = itostr(i);
+    key[3] = strdup("]");
+    niob_set(argv[0], argv[0]);
+    niob_set(key_size, itostr(i + 1));
+    niob_set(join(4, key, ""), argv[1]);
+    return "";
+}
+
+char *builtin_join(char *cmd, int argc, char **argv) {
+    char *key_size = strcat(strdup(argv[0]), ".size");
+    int max_i = niob_get(key_size) ? atoi(niob_get(key_size)) : 0;
+    char **items = malloc(1024);
+    for (int i = 0; i <= max_i; i++) {
+        char **key = malloc(1024);
+        key[0] = strdup(argv[0]);
+        key[1] = strdup("[");
+        key[2] = itostr(i);
+        key[3] = strdup("]");
+        items[i] = niob_get(join(4, key, ""));
+    }
+    return join(max_i + 1, items, " ");
 }
 
 // API
@@ -260,7 +292,7 @@ void niob_init() {
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
-    niob_def("return", builtin_eval, NULL);
+    niob_def("return", buitin_return, NULL);
     niob_def("if", builtin_if, NULL);
     niob_def("?", builtin_if, NULL);
     niob_def("while", builtin_while, NULL);
@@ -283,6 +315,8 @@ void niob_init() {
     niob_def("puts", builtin_puts, NULL);
     niob_def("concat", builtin_concat, NULL);
     niob_def("len", builtin_len, NULL);
+    niob_def("append", builtin_append, NULL);
+    niob_def("join", builtin_join, NULL);
 }
 
 char *niob_eval(char *text) {

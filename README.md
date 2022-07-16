@@ -17,6 +17,8 @@ Niob Programming Language
 - puts
 - concat
 - len
+- item
+- size
 
 ### Operators
 ```
@@ -63,19 +65,24 @@ count = 1.00
 # First argument will be evaluated everytime. Use block {} instead of ()
 while {$count <= 20} {        # Block {} is single argument revaluated everytime
     puts $count
-    count = ($count + 1)      # Expressions () runs imediatly
+    count = ($count + 1)    # Expressions () runs imediatly
     ($count > 10) ? break     # You can break loop using anything that returns
 }
 
 langname = "niob-lang"
 puts (concat ` $langname `) has (len $langname) characters
+
+# Array-like using strings
+list = one two three          # Define words list
+list = $list four             # Append item
+puts ($list item 4)           # Split the string and get the #item
+puts ($list size)
 ```
 
 ## Known issues / TODO
 - String to number parsing in math
 - Comment with unpaired "}" char
 - Scoped variables
-- Arrays
 - Objects
 
 ## License

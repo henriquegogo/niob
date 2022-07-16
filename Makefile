@@ -1,23 +1,24 @@
 BINNAME = niob
-SRC = $(wildcard *.c)
-CFLAGS = -std=gnu11
+LIBNAME = lib$(BINNAME).so
 
-all:
-	$(CC) -o $(BINNAME) $(SRC) $(CFLAGS)
+all: bin lib
 
-debug:
-	$(CC) -g -o $(BINNAME) $(SRC) $(CFLAGS)
-	gdb $(BINNAME)
+bin:
+	$(CC) -o $(BINNAME) main.c $(BINNAME).c
 
-run:
-	./$(BINNAME)
-
-script:
-	./$(BINNAME) script.nio
+lib:
+	$(CC) -c -fpic -o $(BINNAME).o $(BINNAME).c
+	$(CC) -shared -o $(LIBNAME) $(BINNAME).o
+	rm $(BINNAME).o
 
 clean:
-	rm $(BINNAME)
+	test -e $(BINNAME) && rm $(BINNAME) || true
+	test -e $(LIBNAME) && rm $(LIBNAME) || true
 
-test: all script clean
+test: bin
+	@./$(BINNAME) ./script.nio
+	@make clean >> /dev/null
 
-prompt: all run clean
+prompt: bin
+	@./$(BINNAME)
+	@make clean >> /dev/null

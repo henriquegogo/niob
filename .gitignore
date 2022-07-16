@@ -52,4 +52,5 @@ Mkfile.old
 dkms.conf
 
 ###
-caco
+niob
+libniob.so

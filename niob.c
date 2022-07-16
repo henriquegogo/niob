@@ -268,9 +268,6 @@ void niob_init() {
     niob_def("set", builtin_set, NULL);
     niob_def("=", builtin_set, NULL);
     niob_def("del", builtin_del, NULL);
-    niob_def("puts", builtin_puts, NULL);
-    niob_def("concat", builtin_concat, NULL);
-    niob_def("len", builtin_len, NULL);
     niob_def("+", builtin_math, NULL);
     niob_def("-", builtin_math, NULL);
     niob_def("*", builtin_math, NULL);
@@ -283,6 +280,9 @@ void niob_init() {
     niob_def("<=", builtin_operators, NULL);
     niob_def(">", builtin_operators, NULL);
     niob_def("<", builtin_operators, NULL);
+    niob_def("puts", builtin_puts, NULL);
+    niob_def("concat", builtin_concat, NULL);
+    niob_def("len", builtin_len, NULL);
 }
 
 char *niob_eval(char *text) {

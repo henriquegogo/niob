@@ -248,6 +248,13 @@ char *builtin_concat(char *cmd, int argc, char **argv) {
     return join(argc, argv, "");
 }
 
+char *builtin_len(char *cmd, int argc, char **argv) {
+    int length = strlen(join(argc, argv, " "));
+    char *output = malloc(length);
+    sprintf(output, "%d", length);
+    return output;
+}
+
 // API
 void niob_init() {
     commands = malloc(sizeof(struct Command));
@@ -263,6 +270,7 @@ void niob_init() {
     niob_def("del", builtin_del, NULL);
     niob_def("puts", builtin_puts, NULL);
     niob_def("concat", builtin_concat, NULL);
+    niob_def("len", builtin_len, NULL);
     niob_def("+", builtin_math, NULL);
     niob_def("-", builtin_math, NULL);
     niob_def("*", builtin_math, NULL);

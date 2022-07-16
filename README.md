@@ -16,6 +16,7 @@ Niob Programming Language
 - del
 - puts
 - concat
+- len
 
 ### Operators
 ```
@@ -65,6 +66,9 @@ while {$count <= 20} {        # Block {} is single argument revaluated everytime
     count = ($count + 1)      # Expressions () runs imediatly
     ($count > 10) ? break     # You can break loop using anything that returns
 }
+
+langname = "niob-lang"
+puts (concat ` $langname `) has (len $langname) characters
 ```
 
 ## Known issues / TODO

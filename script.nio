@@ -3,7 +3,8 @@
 set ten 10                    # A sentence is formed by command and arguments.
 twenty set 20                 # The order doesn't matter.
 message = "Hello, world"      # Symbols can be commands. "=" is alias for "set".
-puts $message                 # Variable reference.
+puts (get message)            # Get variable value.
+puts $message                 # "$" is alias for get
 
 puts (2 * (20 + $ten))        # Multiple sentences can be called with "( )".
 puts (+ 2 2)                  # Operators are commands too.

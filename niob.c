@@ -4,7 +4,7 @@
 
 #include "niob.h"
 
-typedef enum { IDF, STR, VAR, CMT, EOL, BLCK, EXPR } Type;
+typedef enum { IDF, STR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;
@@ -90,13 +90,17 @@ char *interpret(struct Token *token) {
         token = token->next;
 
         if (token->type == CMT) {
-        } else if (token->type == VAR) {
-            char *value = niob_get(token->value);
-            argv[argc++] = value ? strdup(value) : value;
         } else if (token->type == IDF && !cmd[0] && get_cmd(token->value)) {
             cmd = strdup(token->value);
-        } else if (token->type == IDF || token->type == STR ||
-                token->type == BLCK) {
+        } else if (token->type == IDF && strlen(token->value) > 0) {
+            char *eval_cmd = malloc(1024);
+            sprintf(eval_cmd, "%c", token->value[0]);
+            if (eval_cmd[0] == '$' && get_cmd(eval_cmd)) {
+                strcat(eval_cmd, " ");
+                strcat(eval_cmd, token->value + 1);
+                argv[argc++] = niob_eval(eval_cmd);
+            } else argv[argc++] = strdup(token->value);
+        } else if (token->type == STR || token->type == BLCK) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
             argv[argc++] = niob_eval(token->value);
@@ -130,11 +134,6 @@ struct Token *lexer(char *text) {
         if (text[pos] == '\n' || text[pos] == ';') {
             pos += 1;
             add_token(tokens, EOL, NULL);
-        } else if (text[pos] == '$' && is_char(text[pos + 1])) {
-            pos += 1;
-            int init_pos = pos;
-            while (pos < text_length && is_char(text[pos])) pos += 1;
-            add_token(tokens, VAR, slice(text, init_pos, pos));
         } else if (text[pos] == '#') {
             int init_pos = pos;
             while (pos < text_length && text[pos] != '\n') pos += 1;
@@ -204,6 +203,10 @@ char *builtin_set(char *cmd, int argc, char **argv) {
         argv[1];
     niob_set(argv[0], value);
     return "";
+}
+
+char *builtin_get(char *cmd, int argc, char **argv) {
+    return niob_get(argv[0]);
 }
 
 char *builtin_del(char *cmd, int argc, char **argv) {
@@ -294,7 +297,9 @@ void niob_init() {
     niob_def("while", builtin_while, NULL);
     niob_def("def", builtin_def, NULL);
     niob_def("set", builtin_set, NULL);
+    niob_def("get", builtin_get, NULL);
     niob_def("=", builtin_set, NULL);
+    niob_def("$", builtin_get, NULL);
     niob_def("del", builtin_del, NULL);
     niob_def("+", builtin_math, NULL);
     niob_def("-", builtin_math, NULL);

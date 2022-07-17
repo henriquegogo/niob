@@ -4,7 +4,7 @@
 
 #include "niob.h"
 
-typedef enum { IDF, STR, SYM, CMT, EOL, BLCK, EXPR } Type;
+typedef enum { IDF, STR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;

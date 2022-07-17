@@ -89,16 +89,9 @@ char *interpret(struct Token *token) {
     while (token->next) {
         token = token->next;
 
-        struct Command *command = token->value ? get_cmd(token->value) : NULL;
-
         if (token->type == CMT) {
-        } else if (token->type == IDF && !cmd[0] && command) {
+        } else if (token->type == IDF && !cmd[0] && get_cmd(token->value)) {
             cmd = strdup(token->value);
-        } else if (token->type == SYM && command) {
-            token = token->next;
-            char **command_arg = malloc(1024);
-            command_arg[0] = token->value;
-            argv[argc++] = strdup(command->cmd(cmd, 1, command_arg));
         } else if (token->type == IDF || token->type == STR ||
                 token->type == BLCK) {
             argv[argc++] = strdup(token->value);
@@ -106,7 +99,7 @@ char *interpret(struct Token *token) {
             argv[argc++] = niob_eval(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
-            command = get_cmd(cmd);
+            struct Command *command = get_cmd(cmd);
             if (command) {
                 if (command->body) argv[argc++] = command->body;
                 output = strdup(command->cmd(cmd, argc, argv));
@@ -138,10 +131,6 @@ struct Token *lexer(char *text) {
             int init_pos = pos;
             while (pos < text_length && text[pos] != '\n') pos += 1;
             add_token(tokens, CMT, slice(text, init_pos, pos));
-        } else if (text[pos] == '$') {
-            int init_pos = pos;
-            pos += 1;
-            add_token(tokens, SYM, slice(text, init_pos, pos));
         } else if (text[pos] == '(' || text[pos] == '{') {
             char open_char = text[pos];
             char close_char = open_char == '(' ? ')' : '}';
@@ -162,6 +151,13 @@ struct Token *lexer(char *text) {
             while (text[pos] != quote_char) pos += 1;
             pos += 1;
             add_token(tokens, STR, slice(text, init_pos, pos - 1));
+        } else if (text[pos] == '$' && is_char(text[pos + 1])) {
+            int init_pos = pos;
+            while (pos < text_length && is_char(text[pos])) pos += 1;
+            char *value = malloc(1024);
+            sprintf(value, "%c %s", text[init_pos],
+                    slice(text, init_pos + 1, pos));
+            add_token(tokens, EXPR, value);
         } else if (is_char(text[pos])) {
             int init_pos = pos;
             while (pos < text_length && is_char(text[pos])) pos += 1;

@@ -4,7 +4,7 @@
 
 #include "niob.h"
 
-typedef enum { IDF, STR, CMT, EOL, BLCK, EXPR } Type;
+typedef enum { IDF, STR, SYM, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;
@@ -89,24 +89,24 @@ char *interpret(struct Token *token) {
     while (token->next) {
         token = token->next;
 
+        struct Command *command = token->value ? get_cmd(token->value) : NULL;
+
         if (token->type == CMT) {
-        } else if (token->type == IDF && !cmd[0] && get_cmd(token->value)) {
+        } else if (token->type == IDF && !cmd[0] && command) {
             cmd = strdup(token->value);
-        } else if (token->type == IDF && strlen(token->value) > 0) {
-            char *eval_cmd = malloc(1024);
-            sprintf(eval_cmd, "%c", token->value[0]);
-            if (eval_cmd[0] == '$' && get_cmd(eval_cmd)) {
-                strcat(eval_cmd, " ");
-                strcat(eval_cmd, token->value + 1);
-                argv[argc++] = niob_eval(eval_cmd);
-            } else argv[argc++] = strdup(token->value);
-        } else if (token->type == STR || token->type == BLCK) {
+        } else if (token->type == SYM && command) {
+            token = token->next;
+            char **command_arg = malloc(1024);
+            command_arg[0] = token->value;
+            argv[argc++] = strdup(command->cmd(cmd, 1, command_arg));
+        } else if (token->type == IDF || token->type == STR ||
+                token->type == BLCK) {
             argv[argc++] = strdup(token->value);
         } else if (token->type == EXPR) {
             argv[argc++] = niob_eval(token->value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
-            struct Command *command = get_cmd(cmd);
+            command = get_cmd(cmd);
             if (command) {
                 if (command->body) argv[argc++] = command->body;
                 output = strdup(command->cmd(cmd, argc, argv));
@@ -138,6 +138,10 @@ struct Token *lexer(char *text) {
             int init_pos = pos;
             while (pos < text_length && text[pos] != '\n') pos += 1;
             add_token(tokens, CMT, slice(text, init_pos, pos));
+        } else if (text[pos] == '$') {
+            int init_pos = pos;
+            pos += 1;
+            add_token(tokens, SYM, slice(text, init_pos, pos));
         } else if (text[pos] == '(' || text[pos] == '{') {
             char open_char = text[pos];
             char close_char = open_char == '(' ? ')' : '}';

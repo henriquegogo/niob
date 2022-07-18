@@ -8,7 +8,8 @@ typedef enum { IDF, STR, CMT, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;
-    char *value;
+    int start;
+    int end;
     struct Token *next;
 };
 
@@ -30,13 +31,14 @@ struct Command *commands;
 struct Variable *variables;
 
 // Struct functions (some of them are public and listed in the end of file)
-void add_token(struct Token *token, Type type, char *value) {
+void add_token(struct Token *token, Type type, int start, int end) {
     while (token->next) {
         token = token->next;
     }
     token->next = malloc(sizeof(struct Token));
     token->next->type = type;
-    token->next->value = value;
+    token->next->start = start;
+    token->next->end = end;
 }
 
 struct Command *get_cmd(char *key) {
@@ -80,28 +82,34 @@ int is_char(char ch) {
            ch != '(' && ch != ')' && ch != '{' && ch != '}';
 }
 
-int is_alphanum(char ch) {
+int is_alnum(char ch) {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
         (ch >= '0' && ch <= '9') || ch == '_';
 }
 
 // Tokenizer and Parser
-char *interpret(struct Token *token) {
+char *interpret(struct Token *token, char *text) {
     char *cmd = malloc(1);
     char **argv = malloc(1024);
     int argc = 0;
 
     while (token->next) {
         token = token->next;
+        char *token_value = malloc(token->end - token->start);
+        strncpy(token_value, text + token->start, token->end - token->start);
 
         if (token->type == CMT) {
-        } else if (token->type == IDF && !cmd[0] && get_cmd(token->value)) {
-            cmd = strdup(token->value);
-        } else if (token->type == IDF || token->type == STR ||
-                token->type == BLCK) {
-            argv[argc++] = strdup(token->value);
+        } else if (token->type == IDF) {
+            if (!cmd[0] && get_cmd(token_value)) cmd = token_value;
+            else if (!is_alnum(token_value[0]) && is_alnum(token_value[1])) {
+                char *eval_expr = malloc(token->end - token->start + 1);
+                sprintf(eval_expr, "%c %s", token_value[0], token_value + 1);
+                argv[argc++] = niob_eval(eval_expr);
+            } else argv[argc++] = token_value;
+        } else if (token->type == STR || token->type == BLCK) {
+            argv[argc++] = token_value;
         } else if (token->type == EXPR) {
-            argv[argc++] = niob_eval(token->value);
+            argv[argc++] = niob_eval(token_value);
         } else if (token->type == EOL) {
             char *output = malloc(1);
             struct Command *command = get_cmd(cmd);
@@ -131,11 +139,11 @@ struct Token *lexer(char *text) {
 
         if (text[pos] == '\n' || text[pos] == ';') {
             pos += 1;
-            add_token(tokens, EOL, NULL);
+            add_token(tokens, EOL, 0, 0);
         } else if (text[pos] == '#') {
             int start = pos;
             while (pos < length && text[pos] != '\n') pos += 1;
-            add_token(tokens, CMT, slice(text, start, pos));
+            add_token(tokens, CMT, start, pos);
         } else if (text[pos] == '(' || text[pos] == '{') {
             char open_char = text[pos];
             char close_char = open_char == '(' ? ')' : '}';
@@ -148,28 +156,22 @@ struct Token *lexer(char *text) {
                 else if (text[pos] == close_char) depth -= 1;
                 pos += 1;
             }
-            add_token(tokens, token_type, slice(text, start, pos - 1));
+            add_token(tokens, token_type, start, pos - 1);
         } else if (text[pos] == '"' || text[pos] == '\'') {
             char quote_char = text[pos];
             pos += 1;
             int start = pos;
             while (text[pos] != quote_char) pos += 1;
             pos += 1;
-            add_token(tokens, STR, slice(text, start, pos - 1));
-        } else if (!is_alphanum(text[pos]) && is_alphanum(text[pos + 1])) {
-            int start = pos;
-            while (pos < length && is_char(text[pos])) pos += 1;
-            char *value = malloc(1024);
-            sprintf(value, "%c %s", text[start], slice(text, start + 1, pos));
-            add_token(tokens, EXPR, value);
+            add_token(tokens, STR, start, pos - 1);
         } else if (is_char(text[pos])) {
             int start = pos;
             while (pos < length && is_char(text[pos])) pos += 1;
-            add_token(tokens, IDF, slice(text, start, pos));
+            add_token(tokens, IDF, start, pos);
         }
     }
 
-    add_token(tokens, EOL, NULL);
+    add_token(tokens, EOL, 0, 0);
 
     return tokens;
 }
@@ -219,10 +221,10 @@ char *builtin_del(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_math(char *cmd, int argc, char **argv) {
-    float a = strtof(argv[0], NULL);
-    float b = strtof(argv[1], NULL);
+    long double a = strtold(argv[0], NULL);
+    long double b = strtold(argv[1], NULL);
     char *output = malloc(64);
-    sprintf(output, "%.2f",
+    sprintf(output, "%.2Lf",
             strcmp(cmd, "+") == 0 ? a + b :
             strcmp(cmd, "-") == 0 ? a - b :
             strcmp(cmd, "*") == 0 ? a * b :
@@ -279,7 +281,7 @@ char *builtin_item(char *cmd, int argc, char **argv) {
     return output;
 }
 
-char *builtin_count(char *cmd, int argc, char **argv) {
+char *builtin_size(char *cmd, int argc, char **argv) {
     char *separator = argv[2] ? argv[2] : " ";
     char *item = strtok(argv[0], separator);
     int count = 0;
@@ -321,12 +323,12 @@ void niob_init() {
     niob_def("concat", builtin_concat, NULL);
     niob_def("len", builtin_len, NULL);
     niob_def("item", builtin_item, NULL);
-    niob_def("size", builtin_count, NULL);
+    niob_def("size", builtin_size, NULL);
 }
 
 char *niob_eval(char *text) {
     struct Token *tokens = lexer(text);
-    return interpret(tokens);
+    return interpret(tokens, text);
 }
 
 void niob_def(char *key, char *(*cmd)(), char *body) {

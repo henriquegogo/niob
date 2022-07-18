@@ -80,6 +80,11 @@ int is_char(char ch) {
            ch != '(' && ch != ')' && ch != '{' && ch != '}';
 }
 
+int is_alphanum(char ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+        (ch >= '0' && ch <= '9') || ch == '_';
+}
+
 // Tokenizer and Parser
 char *interpret(struct Token *token) {
     char *cmd = malloc(1);
@@ -114,13 +119,13 @@ char *interpret(struct Token *token) {
 }
 
 struct Token *lexer(char *text) {
-    int text_length = strlen(text);
+    int length = strlen(text);
     long pos = 0;
     struct Token *tokens = malloc(sizeof(struct Token));
 
-    while (pos + 1 < text_length) {
+    while (pos + 1 < length) {
         while (text[pos] == ' ' || text[pos] == '\t') {
-            if (pos + 1 == text_length) break;
+            if (pos + 1 == length) break;
             pos += 1;
         }
 
@@ -128,40 +133,39 @@ struct Token *lexer(char *text) {
             pos += 1;
             add_token(tokens, EOL, NULL);
         } else if (text[pos] == '#') {
-            int init_pos = pos;
-            while (pos < text_length && text[pos] != '\n') pos += 1;
-            add_token(tokens, CMT, slice(text, init_pos, pos));
+            int start = pos;
+            while (pos < length && text[pos] != '\n') pos += 1;
+            add_token(tokens, CMT, slice(text, start, pos));
         } else if (text[pos] == '(' || text[pos] == '{') {
             char open_char = text[pos];
             char close_char = open_char == '(' ? ')' : '}';
             Type token_type = open_char == '(' ? EXPR : BLCK;
             pos += 1;
-            int init_pos = pos;
+            int start = pos;
             int depth = 1;
             while (depth > 0) {
                 if (text[pos] == open_char) depth += 1;
                 else if (text[pos] == close_char) depth -= 1;
                 pos += 1;
             }
-            add_token(tokens, token_type, slice(text, init_pos, pos - 1));
+            add_token(tokens, token_type, slice(text, start, pos - 1));
         } else if (text[pos] == '"' || text[pos] == '\'') {
             char quote_char = text[pos];
             pos += 1;
-            int init_pos = pos;
+            int start = pos;
             while (text[pos] != quote_char) pos += 1;
             pos += 1;
-            add_token(tokens, STR, slice(text, init_pos, pos - 1));
-        } else if (text[pos] == '$' && is_char(text[pos + 1])) {
-            int init_pos = pos;
-            while (pos < text_length && is_char(text[pos])) pos += 1;
+            add_token(tokens, STR, slice(text, start, pos - 1));
+        } else if (!is_alphanum(text[pos]) && is_alphanum(text[pos + 1])) {
+            int start = pos;
+            while (pos < length && is_char(text[pos])) pos += 1;
             char *value = malloc(1024);
-            sprintf(value, "%c %s", text[init_pos],
-                    slice(text, init_pos + 1, pos));
+            sprintf(value, "%c %s", text[start], slice(text, start + 1, pos));
             add_token(tokens, EXPR, value);
         } else if (is_char(text[pos])) {
-            int init_pos = pos;
-            while (pos < text_length && is_char(text[pos])) pos += 1;
-            add_token(tokens, IDF, slice(text, init_pos, pos));
+            int start = pos;
+            while (pos < length && is_char(text[pos])) pos += 1;
+            add_token(tokens, IDF, slice(text, start, pos));
         }
     }
 

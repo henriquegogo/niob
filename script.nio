@@ -17,9 +17,10 @@ if false {                    # Blocks are considered one argument "{*}".
     puts 'two is two'         # that need to be in the same sentence, so
     puts (concat 2 2)         # avoid to declare in a new line. Use after "{}".
 
-    # Symbols "?", ":" are alias for "if", "else".
+    # Symbol "?", is alias for "if". ":" could be anything different of "false".
     # And order doesn't matter, remember?
     puts (true ? 'ok' : 'fail')   
+    puts (false ? 'first ok' (1 != 1) 'second ok' else 'third ok')   
 } (2 > 1) {                   # You can use this syntax as "elseif". Operators
     puts 'two is bigger'      # are commands too.
 } else { puts 'the end' }    

@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
         while (strcmp(input, "exit\n") != 0) {
             printf("niob> ");
             fflush(stdout);
-            fgets(input,1024,stdin);
+            fgets(input, 1024, stdin);
             niob_eval(input);
         }
     } else if (argc == 2) {

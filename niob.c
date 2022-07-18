@@ -63,7 +63,7 @@ char *join(int argc, char **argv, char *separator) {
     }
     char *output = malloc(charc);
     for (int i = 0; i < argc; i++) {
-        if (i > 0 && separator) strcat(output, separator);
+        if (i > 0 && separator[0]) strcat(output, separator);
         if (argv[i]) strcat(output, argv[i]);
     }
     return output;

@@ -100,12 +100,12 @@ char *interpret(struct Token *token, char *text) {
 
         if (token->type == CMT) {
         } else if (token->type == IDF) {
-            if (!cmd[0] && get_cmd(token_value)) cmd = token_value;
-            else if (!is_alnum(token_value[0]) && is_alnum(token_value[1])) {
+            if (!is_alnum(token_value[0]) && is_alnum(token_value[1])) {
                 char *eval_expr = malloc(token->end - token->start + 1);
                 sprintf(eval_expr, "%c %s", token_value[0], token_value + 1);
                 argv[argc++] = niob_eval(eval_expr);
-            } else argv[argc++] = token_value;
+            } else if (!cmd[0] && get_cmd(token_value)) cmd = token_value;
+            else argv[argc++] = token_value;
         } else if (token->type == STR || token->type == BLCK) {
             argv[argc++] = token_value;
         } else if (token->type == EXPR) {

@@ -13,6 +13,12 @@ struct Token {
     struct Token *next;
 };
 
+struct TokenCache {
+    char *key;
+    struct Token *token;
+    struct TokenCache *next;
+};
+
 struct Command {
     char *key;
     char *(*cmd)();
@@ -25,6 +31,8 @@ struct Variable {
     char *value;
     struct Variable *next;
 };
+
+struct TokenCache *token_cache;
 
 struct Command *commands;
 
@@ -221,10 +229,10 @@ char *builtin_del(char *cmd, int argc, char **argv) {
 }
 
 char *builtin_math(char *cmd, int argc, char **argv) {
-    long double a = strtold(argv[0], NULL);
-    long double b = strtold(argv[1], NULL);
+    long a = strtol(argv[0], NULL, 10);
+    long b = strtol(argv[1], NULL, 10);
     char *output = malloc(64);
-    sprintf(output, "%.2Lf",
+    sprintf(output, "%ld",
             strcmp(cmd, "+") == 0 ? a + b :
             strcmp(cmd, "-") == 0 ? a - b :
             strcmp(cmd, "*") == 0 ? a * b :
@@ -237,8 +245,8 @@ char *builtin_operators(char *cmd, int argc, char **argv) {
     int is_equal = strcmp(argv[0], argv[1]) == 0;
     int a_is_true = strcmp(argv[0], "false") != 0;
     int b_is_true = strcmp(argv[1], "false") != 0;
-    float a = strtof(argv[0], NULL);
-    float b = strtof(argv[1], NULL);
+    long a = strtol(argv[0], NULL, 10);
+    long b = strtol(argv[1], NULL, 10);
     return (
             strcmp(cmd, "&&") == 0 && a_is_true && b_is_true ||
             strcmp(cmd, "||") == 0 && (a_is_true || b_is_true) ||
@@ -294,6 +302,7 @@ char *builtin_size(char *cmd, int argc, char **argv) {
 
 // API
 void niob_init() {
+    token_cache = malloc(sizeof(struct TokenCache));
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
@@ -327,7 +336,19 @@ void niob_init() {
 }
 
 char *niob_eval(char *text) {
-    struct Token *tokens = lexer(text);
+    struct Token *tokens = NULL;
+    struct TokenCache *cache = token_cache;
+    while (cache->next) {
+        cache = cache->next;
+        if (strcmp(cache->key, text) == 0) tokens = cache->token;
+    }
+    if (!tokens) {
+        struct TokenCache *cache = token_cache;
+        while (cache->next) cache = cache->next;
+        cache->next = malloc(sizeof(struct TokenCache));
+        cache->next->key = text;
+        cache->next->token = tokens = lexer(text);
+    }
     return interpret(tokens, text);
 }
 

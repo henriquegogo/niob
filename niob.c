@@ -4,7 +4,7 @@
 
 #include "niob.h"
 
-typedef enum { IDF, STR, CMT, EOL, BLCK, EXPR } Type;
+typedef enum { IDF, STR, EOL, BLCK, EXPR } Type;
 
 struct Token {
     Type type;
@@ -92,13 +92,10 @@ char *interpret(struct Token *token, char *text) {
         char *token_value = malloc(token->end - token->start);
         strncpy(token_value, text + token->start, token->end - token->start);
 
-        if (token->type == CMT) {
-        } else if (token->type == IDF) {
-            if (!is_alnum(token_value[0]) && is_alnum(token_value[1])) {
-                char *eval_expr = malloc(token->end - token->start + 1);
-                sprintf(eval_expr, "%c %s", token_value[0], token_value + 1);
-                argv[argc++] = niob_eval(eval_expr);
-            } else if (!cmd[0] && get_cmd(token_value)) cmd = token_value;
+        if (token->type == IDF) {
+            if (token_value[0] == '$')
+                argv[argc++] = strdup(niob_get(token_value + 1));
+            else if (!cmd[0] && get_cmd(token_value)) cmd = token_value;
             else argv[argc++] = token_value;
         } else if (token->type == STR || token->type == BLCK) {
             argv[argc++] = token_value;
@@ -131,13 +128,11 @@ struct Token *lexer(char *text) {
             pos += 1;
         }
 
-        if (text[pos] == '\n' || text[pos] == ';') {
+        if (text[pos] == '#') {
+            while (pos < length && text[pos] != '\n') pos += 1;
+        } else if (text[pos] == '\n' || text[pos] == ';') {
             pos += 1;
             add_token(tokens, EOL, 0, 0);
-        } else if (text[pos] == '#') {
-            int start = pos;
-            while (pos < length && text[pos] != '\n') pos += 1;
-            add_token(tokens, CMT, start, pos);
         } else if (text[pos] == '(' || text[pos] == '{') {
             char open_char = text[pos];
             char close_char = open_char == '(' ? ')' : '}';
@@ -296,10 +291,9 @@ void niob_init() {
     niob_def("?", builtin_if, NULL);
     niob_def("while", builtin_while, NULL);
     niob_def("def", builtin_def, NULL);
-    niob_def("set", builtin_set, NULL);
     niob_def("get", builtin_get, NULL);
+    niob_def("set", builtin_set, NULL);
     niob_def("=", builtin_set, NULL);
-    niob_def("$", builtin_get, NULL);
     niob_def("del", builtin_del, NULL);
     niob_def("+", builtin_math, NULL);
     niob_def("-", builtin_math, NULL);

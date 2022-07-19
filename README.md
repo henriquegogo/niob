@@ -10,7 +10,7 @@ Niob Programming Language
 ### Actions
 - if (alternative: ?)
 - set (alternative: =)
-- get (alternative: $)
+- get (alternative: $ concatenated)
 - return (alternative: sentence without command)
 - while
 - def

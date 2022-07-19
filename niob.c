@@ -51,12 +51,6 @@ struct Command *get_cmd(char *key) {
 }
 
 // Helpers
-char *slice(char *text, long start, long end) {
-    char *value = malloc(end - start);
-    strncpy(value, text + start, end - start);
-    return value;
-}
-
 char *join(int argc, char **argv, char *separator) {
     int charc = 0;
     for (int i = 0; i < argc; i++) {

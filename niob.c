@@ -388,7 +388,7 @@ char *niob_get(char *key) {
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) return variable->value;
     }
-    return NULL;
+    return "";
 }
 
 void niob_del(char *key) {

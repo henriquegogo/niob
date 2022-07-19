@@ -33,7 +33,7 @@ def say_my_name {             # Define functions
 say_my_name { name = 'me' }   # Blocks are considered one single argument.
 puts $name                    # Any variable is global
 
-count = 1.00
+count = 1
 # First argument will be evaluated everytime. Use block {} instead of ()
 while {$count <= 20} {        # Block {} is single argument revaluated everytime
     puts $count

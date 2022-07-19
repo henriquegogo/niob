@@ -27,6 +27,12 @@ Niob Programming Language
 && || == != >= <= > <
 ```
 
+## How to run
+```sh
+make
+./niob
+```
+
 ## Example
 ```ruby
 message = "Hello, world"

@@ -13,12 +13,6 @@ struct Token {
     struct Token *next;
 };
 
-struct TokenCache {
-    char *key;
-    struct Token *token;
-    struct TokenCache *next;
-};
-
 struct Command {
     char *key;
     char *(*cmd)();
@@ -31,8 +25,6 @@ struct Variable {
     char *value;
     struct Variable *next;
 };
-
-struct TokenCache *token_cache;
 
 struct Command *commands;
 
@@ -302,7 +294,6 @@ char *builtin_size(char *cmd, int argc, char **argv) {
 
 // API
 void niob_init() {
-    token_cache = malloc(sizeof(struct TokenCache));
     commands = malloc(sizeof(struct Command));
     variables = malloc(sizeof(struct Variable));
 
@@ -336,20 +327,7 @@ void niob_init() {
 }
 
 char *niob_eval(char *text) {
-    struct Token *tokens = NULL;
-    struct TokenCache *cache = token_cache;
-    while (cache->next) {
-        cache = cache->next;
-        if (strcmp(cache->key, text) == 0) tokens = cache->token;
-    }
-    if (!tokens) {
-        struct TokenCache *cache = token_cache;
-        while (cache->next) cache = cache->next;
-        cache->next = malloc(sizeof(struct TokenCache));
-        cache->next->key = text;
-        cache->next->token = tokens = lexer(text);
-    }
-    return interpret(tokens, text);
+    return interpret(lexer(text), text);
 }
 
 void niob_def(char *key, char *(*cmd)(), char *body) {
@@ -397,8 +375,6 @@ void niob_del(char *key) {
         struct Variable *old_variable = variable;
         variable = variable->next;
         if (strcmp(variable->key, key) == 0) {
-            free(variable->key);
-            free(variable->value);
             old_variable->next = variable->next;
             variable = old_variable;
         }
